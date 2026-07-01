@@ -4,7 +4,9 @@ import unittest
 import asyncio
 
 # Resolve paths to allow running from any directory
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+sys.path.append(os.path.join(root_dir, "src"))
 
 # 1. Mock 'machine' module
 import tests.mock_machine as mock_machine

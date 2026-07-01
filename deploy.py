@@ -16,15 +16,16 @@ def deploy():
     print("[Deploy] Starting file synchronization to W5500-EVB-Pico board using uv...")
 
     for file in FILES_TO_DEPLOY:
-        if not os.path.exists(file):
-            print(f"[Deploy] Error: Local file {file} not found. Aborting.")
+        local_path = os.path.join("src", file)
+        if not os.path.exists(local_path):
+            print(f"[Deploy] Error: Local file {local_path} not found. Aborting.")
             sys.exit(1)
 
-        print(f"[Deploy] Transferring {file} -> MicroPython filesystem...")
+        print(f"[Deploy] Transferring {local_path} -> MicroPython filesystem as :{file}...")
         try:
             # Leverage uv to run mpremote in an isolated virtual environment on the fly
             subprocess.run(
-                ["uv", "run", "--with", "mpremote", "mpremote", "fs", "cp", file, f":{file}"],
+                ["uv", "run", "--with", "mpremote", "mpremote", "fs", "cp", local_path, f":{file}"],
                 check=True
             )
         except subprocess.SubprocessError as e:

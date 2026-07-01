@@ -1,5 +1,7 @@
 # Antigravity Agent Configuration: Smart UPS Controller Platform
 
+* **Reference Manual:** [MEAN WELL LAD Instruction Manual](https://www.meanwellaustralia.com.au/sites/default/files/2024-12/MEAN%20WELL%20LAD%20Instruction%20Manual.pdf)
+
 ## 1. System Target Architecture
 * [cite_start]**Primary Power Hardware:** MEAN WELL LAD-600BU (600W, 27.6V Nominal DC Bus, UART Version)[cite: 17, 19, 21].
 * [cite_start]**Energy Storage Subsystem:** Two 12V Lead-Acid (SLA) batteries wired in series forming a 24V nominal string (27.6V float charge profiles)[cite: 36, 39, 196].
