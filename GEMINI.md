@@ -48,3 +48,35 @@ When generating code blocks, the agent must adhere to the following definitions:
 * [cite_start]**Volatile Register Writes:** Remind the developer or sub-agents that register modification packages (e.g., changing UVP limits or toggling buzzer mutes) target live processor RAM[cite: 540]. [cite_start]They do not commit to non-volatile flash and will clear back to factory defaults when system power cycles[cite: 540].
 * **Memory Management:** Constrained RP2040 system RAM requires aggressive socket tracking. Every web server client thread must explicitly hit `writer.close()` and invoke `await writer.wait_closed()` to prevent dangling resource leaks.
 * [cite_start]**Safety Isolation Requirement:** Direct the sub-agents to always emphasize the installation of a physical, inline safety fuse on the high-current `BAT+` terminal wire to handle dead shorts safely[cite: 63, 71, 76, 80, 90].
+
+## 6. Local Development & Operational Practices
+
+To ensure isolated, fast, and repeatable builds, developers must use the following tools and practices:
+
+### 6.1 Python Environment Management via `uv`
+Rather than executing raw system python or installing pip packages globally, all scripts must be run under `uv` control:
+* **Running Unit Tests:**
+  ```bash
+  uv run python -m unittest tests.test_controller
+  ```
+* **Running Local Mock API Server:**
+  ```bash
+  uv run python tests/mock_device_server.py 8000
+  ```
+* **Transferring Code to Board (Pico):**
+  Uses `uv` to dynamically resolve the `mpremote` package in a temporary environment:
+  ```bash
+  uv run python deploy.py
+  ```
+
+### 6.2 Dockerized Dashboard Services
+The dashboard runs in a Python-slim container with a SQLite database backend to store historical battery/load graphs:
+* **Running/Deploying the Dashboard:**
+  ```bash
+  docker run -d \
+    -p 8080:8080 \
+    -e PICO_UPS_URL=http://172.17.0.1:8000 \
+    -v smart_ups_data:/data \
+    --name ups-dashboard \
+    smart_ups_dashboard
+  ```
