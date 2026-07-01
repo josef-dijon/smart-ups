@@ -1,17 +1,9 @@
-import uasyncio
-import json
-import config
-from lad_controller import LADController
-
-# Global controller instance reference
-_controller = None
-
-HTML_DASHBOARD = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart UPS Controller Platform</title>
+    <title>Smart UPS Dashboard</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -34,8 +26,8 @@ HTML_DASHBOARD = """<!DOCTYPE html>
 
         body {
             background-color: var(--bg-color);
-            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 400px),
-                              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 400px);
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 500px),
+                              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.04), transparent 500px);
             color: var(--text);
             min-height: 100vh;
             padding: 2rem 1rem;
@@ -69,6 +61,12 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             margin-top: 0.25rem;
         }
 
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
         .status-badge {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-color);
@@ -83,8 +81,14 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         .pulse-dot {
             width: 8px;
             height: 8px;
-            background-color: var(--success);
+            background-color: var(--danger);
             border-radius: 50%;
+            box-shadow: 0 0 8px var(--danger);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .pulse-dot.online {
+            background-color: var(--success);
             box-shadow: 0 0 8px var(--success);
             animation: pulse 1.5s infinite;
         }
@@ -95,9 +99,67 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
+        .settings-bar {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .settings-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-grow: 1;
+            max-width: 500px;
+        }
+
+        .settings-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .settings-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            flex-grow: 1;
+        }
+
+        .settings-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-sm {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-sm:hover {
+            opacity: 0.9;
+        }
+
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -265,7 +327,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
         @media (max-width: 768px) {
             .grid { grid-template-columns: 1fr; }
             header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-            .status-badge { align-self: flex-start; }
+            .connection-status { width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
@@ -273,17 +335,28 @@ HTML_DASHBOARD = """<!DOCTYPE html>
     <div class="container">
         <header>
             <div>
-                <h1>Smart UPS Controller</h1>
-                <div class="sub-header">W5500-EVB-Pico & Mean Well LAD-600BU Platform</div>
+                <h1>Smart UPS Dashboard</h1>
+                <div class="sub-header">Remote Monitoring & Control Console</div>
             </div>
-            <div class="status-badge">
-                <div class="pulse-dot"></div>
-                <span>Pico System Live</span>
+            <div class="connection-status">
+                <div class="status-badge">
+                    <div class="pulse-dot" id="system_dot"></div>
+                    <span id="system_status_text">Offline</span>
+                </div>
             </div>
         </header>
 
+        <!-- Target Configuration Settings Bar -->
+        <div class="settings-bar">
+            <div class="settings-input-group">
+                <span class="settings-label">Target Controller Address:</span>
+                <input type="text" class="settings-input" id="target_url" placeholder="e.g. http://192.168.1.15 or leave blank for Nginx Proxy">
+            </div>
+            <button class="btn-sm" onclick="saveSettings()">Apply Address</button>
+        </div>
+
         <div class="grid">
-            <!-- Telemetry Card -->
+            <!-- AC Grid Status -->
             <div class="card">
                 <div class="card-title">
                     <span>AC Grid & Main Power</span>
@@ -311,7 +384,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Battery Card -->
+            <!-- Battery String Status -->
             <div class="card">
                 <div class="card-title">
                     <span>Battery Series String</span>
@@ -336,7 +409,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Cell Supervision Card -->
+            <!-- Cell Supervision -->
             <div class="card">
                 <div class="card-title">
                     <span>Discrete Cell Inspection</span>
@@ -345,7 +418,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 <div class="metric-group">
                     <div>
                         <div class="metric-row" style="border: none; padding-bottom: 0;">
-                            <span class="metric-label">Battery 1 Voltage</span>
+                            <span class="metric-label">Battery 1 Voltage (Cell 1)</span>
                             <div>
                                 <span class="metric-val" style="font-size: 1.1rem;" id="cell1_voltage">--.--</span>
                                 <span class="metric-unit">V</span>
@@ -357,7 +430,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                     </div>
                     <div>
                         <div class="metric-row" style="border: none; padding-bottom: 0;">
-                            <span class="metric-label">Battery 2 Voltage</span>
+                            <span class="metric-label">Battery 2 Voltage (Cell 2)</span>
                             <div>
                                 <span class="metric-val" style="font-size: 1.1rem;" id="cell2_voltage">--.--</span>
                                 <span class="metric-unit">V</span>
@@ -374,7 +447,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Protection Limits & Warnings -->
+            <!-- Diagnostics -->
             <div class="card">
                 <div class="card-title">
                     <span>Safety Limits & Diagnostics</span>
@@ -399,7 +472,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Control Card 1 -->
+            <!-- Standby Control -->
             <div class="card">
                 <div class="card-title">
                     <span>Isolate / Backup Relay</span>
@@ -418,7 +491,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Control Card 2 -->
+            <!-- Parameters Control -->
             <div class="card">
                 <div class="card-title">
                     <span>Mute & Thresholds</span>
@@ -450,14 +523,58 @@ HTML_DASHBOARD = """<!DOCTYPE html>
     <script>
         let isBuzzerMuted = false;
         let isIsolated = false;
+        let targetBaseUrl = "";
+
+        // Load configuration on boot
+        window.addEventListener('load', () => {
+            const savedUrl = localStorage.getItem('pico_ups_url');
+            if (savedUrl) {
+                document.getElementById('target_url').value = savedUrl;
+                targetBaseUrl = savedUrl;
+            } else {
+                // If blank, defaults to relative paths (working through Nginx reverse proxy)
+                targetBaseUrl = "";
+            }
+            fetchStatus();
+            setInterval(fetchStatus, 1500);
+        });
+
+        function saveSettings() {
+            let url = document.getElementById('target_url').value.trim();
+            if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
+                url = "http://" + url;
+            }
+            if (url.endsWith("/")) {
+                url = url.slice(0, -1);
+            }
+            localStorage.setItem('pico_ups_url', url);
+            targetBaseUrl = url;
+            alert(`Target address set to: ${url || "Relative Nginx Proxy"}`);
+            fetchStatus();
+        }
 
         async function fetchStatus() {
             try {
-                const res = await fetch('/api/status');
+                const res = await fetch(`${targetBaseUrl}/api/status`);
+                if (!res.ok) throw new Error("API responded with error");
                 const data = await res.json();
                 updateUI(data);
+                setConnectionOnline(true);
             } catch (err) {
                 console.error("Error fetching telemetry:", err);
+                setConnectionOnline(false);
+            }
+        }
+
+        function setConnectionOnline(online) {
+            const dot = document.getElementById('system_dot');
+            const text = document.getElementById('system_status_text');
+            if (online) {
+                dot.className = "pulse-dot online";
+                text.innerText = "Connected";
+            } else {
+                dot.className = "pulse-dot";
+                text.innerText = "Offline";
             }
         }
 
@@ -555,7 +672,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
 
         async function controlAction(action) {
             try {
-                const res = await fetch(`/api/control?action=${action}`);
+                const res = await fetch(`${targetBaseUrl}/api/control?action=${action}`);
                 const data = await res.json();
                 if (data.success) {
                     alert(`Relay Action '${action}' executed successfully.`);
@@ -572,7 +689,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
             const nextState = !isBuzzerMuted;
             const action = nextState ? 'mute' : 'unmute';
             try {
-                const res = await fetch(`/api/control?action=${action}`);
+                const res = await fetch(`${targetBaseUrl}/api/control?action=${action}`);
                 const data = await res.json();
                 if (data.success) {
                     isBuzzerMuted = nextState;
@@ -592,7 +709,7 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 return;
             }
             try {
-                const res = await fetch(`/api/control?action=uvp&voltage=${val}`);
+                const res = await fetch(`${targetBaseUrl}/api/control?action=uvp&voltage=${val}`);
                 const data = await res.json();
                 if (data.success) {
                     alert(`UVP limit set to ${val}V successfully.`);
@@ -604,136 +721,6 @@ HTML_DASHBOARD = """<!DOCTYPE html>
                 alert(`Error executing control: ${err}`);
             }
         }
-
-        // Start status polling
-        fetchStatus();
-        setInterval(fetchStatus, 1500);
     </script>
 </body>
 </html>
-"""
-
-async def handle_client(reader, writer):
-    """
-    Handles single web socket connection.
-    Implements aggressive socket tracking to prevent memory leakage on RP2040.
-    """
-    try:
-        # 1. Read HTTP request line
-        req_line = await reader.readline()
-        if not req_line:
-            return
-        
-        # Consume request headers
-        while True:
-            line = await reader.readline()
-            if not line or line == b'\r\n':
-                break
-                
-        # Parse method and URI
-        req_str = req_line.decode('utf-8')
-        parts = req_str.split(' ')
-        if len(parts) < 2:
-            return
-        method, path = parts[0], parts[1]
-        
-        # 2. CORS Preflight Handler
-        if method == "OPTIONS":
-            response_header = (
-                "HTTP/1.1 204 No Content\r\n"
-                "Access-Control-Allow-Origin: *\r\n"
-                "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n"
-                "Access-Control-Allow-Headers: Content-Type\r\n"
-                "Connection: close\r\n\r\n"
-            )
-            writer.write(response_header.encode('utf-8'))
-            await writer.drain()
-            return
-
-        # 3. Router Dispatch
-        if path == "/" or path == "/index.html":
-            # Serve dashboard html
-            response_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n"
-            writer.write(response_header.encode('utf-8'))
-            writer.write(HTML_DASHBOARD.encode('utf-8'))
-            
-        elif path == "/api/status":
-            # Serve telemetry json with CORS enabled
-            telemetry_data = json.dumps(_controller.telemetry)
-            response_header = (
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: application/json\r\n"
-                "Access-Control-Allow-Origin: *\r\n"
-                "Connection: close\r\n\r\n"
-            )
-            writer.write(response_header.encode('utf-8'))
-            writer.write(telemetry_data.encode('utf-8'))
-            
-        elif path.startswith("/api/control?"):
-            # Parse simple query params
-            query = path.split("?")[1]
-            params = {}
-            for pair in query.split("&"):
-                if "=" in pair:
-                    k, v = pair.split("=")
-                    params[k] = v
-            
-            action = params.get("action", "")
-            success = False
-            err_msg = ""
-            
-            if action == "isolate":
-                success = await _controller.isolate_battery()
-            elif action == "connect":
-                success = await _controller.enable_battery_backup()
-            elif action == "mute":
-                success = await _controller.set_buzzer_mute(True)
-            elif action == "unmute":
-                success = await _controller.set_buzzer_mute(False)
-            elif action == "uvp":
-                voltage_str = params.get("voltage", "")
-                try:
-                    voltage = float(voltage_str)
-                    success = await _controller.set_uvp_limit(voltage)
-                except ValueError:
-                    err_msg = "Invalid voltage parameter value"
-            else:
-                err_msg = "Unknown action requested"
-                
-            resp_body = json.dumps({"success": success, "error": err_msg})
-            response_header = (
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: application/json\r\n"
-                "Access-Control-Allow-Origin: *\r\n"
-                "Connection: close\r\n\r\n"
-            )
-            writer.write(response_header.encode('utf-8'))
-            writer.write(resp_body.encode('utf-8'))
-            
-        else:
-            # 404 Not Found
-            resp_body = "404 Not Found"
-            response_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n"
-            writer.write(response_header.encode('utf-8'))
-            writer.write(resp_body.encode('utf-8'))
-            
-        await writer.drain()
-        
-    except Exception as e:
-        print("[Web] Error in client handler:", e)
-    finally:
-        # Aggressive connection tracking to free socket file descriptors
-        try:
-            writer.close()
-            await writer.wait_closed()
-        except Exception as e:
-            print("[Web] Socket close error:", e)
-
-async def start_server(controller: LADController):
-    """Starts the network web server daemon."""
-    global _controller
-    _controller = controller
-    
-    print(f"[Web] Starting daemon on port {config.WEB_PORT}...")
-    server = await uasyncio.start_server(handle_client, '0.0.0.0', config.WEB_PORT)
-    return server
