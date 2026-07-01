@@ -347,14 +347,7 @@
             </div>
         </header>
 
-        <!-- Target Configuration Settings Bar -->
-        <div class="settings-bar">
-            <div class="settings-input-group">
-                <span class="settings-label">Target Controller Address:</span>
-                <input type="text" class="settings-input" id="target_url" placeholder="e.g. http://192.168.1.15 or leave blank for Nginx Proxy">
-            </div>
-            <button class="btn-sm" onclick="saveSettings()">Apply Address</button>
-        </div>
+        <!-- Main Layout Grid -->
 
         <div class="grid">
             <!-- AC Grid Status -->
@@ -535,56 +528,36 @@
     <script>
         let isBuzzerMuted = false;
         let isIsolated = false;
-        let targetBaseUrl = "";
         let historyChart = null;
 
         // Load configuration on boot
         window.addEventListener('load', () => {
-            const savedUrl = localStorage.getItem('pico_ups_url');
-            if (savedUrl) {
-                document.getElementById('target_url').value = savedUrl;
-                targetBaseUrl = savedUrl;
-            } else {
-                // If blank, defaults to relative paths (working through Nginx reverse proxy)
-                targetBaseUrl = "";
-            }
             fetchStatus();
             fetchHistory();
             setInterval(fetchStatus, 1500);
             setInterval(fetchHistory, 10000);
         });
 
-        function saveSettings() {
-            let url = document.getElementById('target_url').value.trim();
-            if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
-                url = "http://" + url;
-            }
-            if (url.endsWith("/")) {
-                url = url.slice(0, -1);
-            }
-            localStorage.setItem('pico_ups_url', url);
-            targetBaseUrl = url;
-            alert(`Target address set to: ${url || "Relative Nginx Proxy"}`);
-            fetchStatus();
-            fetchHistory();
-        }
-
         async function fetchStatus() {
             try {
-                const res = await fetch(`${targetBaseUrl}/api/status`);
+                const res = await fetch('/api/status');
+                if (res.status === 503) {
+                    setConnectionStatus("discovering", "Auto-Discovering...");
+                    return;
+                }
                 if (!res.ok) throw new Error("API responded with error");
                 const data = await res.json();
                 updateUI(data);
-                setConnectionOnline(true);
+                setConnectionStatus("online", "Connected");
             } catch (err) {
                 console.error("Error fetching telemetry:", err);
-                setConnectionOnline(false);
+                setConnectionStatus("offline", "Offline");
             }
         }
 
         async function fetchHistory() {
             try {
-                const res = await fetch(`${targetBaseUrl}/api/history`);
+                const res = await fetch('/api/history');
                 if (!res.ok) throw new Error("History API responded with error");
                 const data = await res.json();
                 updateChart(data);
@@ -707,15 +680,22 @@
             }
         }
 
-        function setConnectionOnline(online) {
+        function setConnectionStatus(status, label) {
             const dot = document.getElementById('system_dot');
             const text = document.getElementById('system_status_text');
-            if (online) {
+            text.innerText = label;
+            if (status === "online") {
                 dot.className = "pulse-dot online";
-                text.innerText = "Connected";
+                dot.style.backgroundColor = "var(--success)";
+                dot.style.boxShadow = "0 0 8px var(--success)";
+            } else if (status === "discovering") {
+                dot.className = "pulse-dot online";
+                dot.style.backgroundColor = "var(--warning)";
+                dot.style.boxShadow = "0 0 8px var(--warning)";
             } else {
                 dot.className = "pulse-dot";
-                text.innerText = "Offline";
+                dot.style.backgroundColor = "var(--danger)";
+                dot.style.boxShadow = "0 0 8px var(--danger)";
             }
         }
 
@@ -813,7 +793,7 @@
 
         async function controlAction(action) {
             try {
-                const res = await fetch(`${targetBaseUrl}/api/control?action=${action}`);
+                const res = await fetch(`/api/control?action=${action}`);
                 const data = await res.json();
                 if (data.success) {
                     alert(`Relay Action '${action}' executed successfully.`);
@@ -830,7 +810,7 @@
             const nextState = !isBuzzerMuted;
             const action = nextState ? 'mute' : 'unmute';
             try {
-                const res = await fetch(`${targetBaseUrl}/api/control?action=${action}`);
+                const res = await fetch(`/api/control?action=${action}`);
                 const data = await res.json();
                 if (data.success) {
                     isBuzzerMuted = nextState;
@@ -850,7 +830,7 @@
                 return;
             }
             try {
-                const res = await fetch(`${targetBaseUrl}/api/control?action=uvp&voltage=${val}`);
+                const res = await fetch(`/api/control?action=uvp&voltage=${val}`);
                 const data = await res.json();
                 if (data.success) {
                     alert(`UVP limit set to ${val}V successfully.`);

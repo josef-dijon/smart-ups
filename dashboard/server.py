@@ -10,8 +10,11 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Configurations
 DB_PATH = os.environ.get("DB_PATH", "/data/history.db")
-PICO_UPS_URL = os.environ.get("PICO_UPS_URL", "http://127.0.0.1:8000")
+PICO_UPS_URL = os.environ.get("PICO_UPS_URL", "")
 PORT = int(os.environ.get("PORT", "8080"))
+
+if not PICO_UPS_URL or PICO_UPS_URL.strip() == "":
+    PICO_UPS_URL = None
 
 # Ensure database directory exists
 db_dir = os.path.dirname(DB_PATH)
@@ -35,10 +38,44 @@ def init_db():
     conn.close()
     print(f"[Backend] Database initialized at: {DB_PATH}")
 
+def start_udp_discovery():
+    """Listens for UDP broadcast beacons from the Pico board to auto-discover its IP address."""
+    import socket
+    
+    def discovery_worker():
+        global PICO_UPS_URL
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(('', 5555))
+            print("[Discovery] Listening for Pico discovery beacons on UDP port 5555...", flush=True)
+        except Exception as e:
+            print(f"[Discovery] Failed to bind UDP discovery port: {e}", flush=True)
+            return
+
+        while True:
+            try:
+                data, addr = sock.recvfrom(1024)
+                payload = json.loads(data.decode('utf-8'))
+                if payload.get("device") == "smart_ups":
+                    new_ip = payload.get("ip")
+                    new_url = f"http://{new_ip}"
+                    if PICO_UPS_URL != new_url:
+                         print(f"[Discovery] Auto-discovered Smart UPS board at {new_url}", flush=True)
+                         PICO_UPS_URL = new_url
+            except Exception as e:
+                time.sleep(1)
+
+    threading.Thread(target=discovery_worker, daemon=True).start()
+
 def polling_loop():
     """Background polling loop that pulls telemetry from the Pico and stores it in SQLite."""
-    print(f"[Backend] Starting background telemetry logger targeting {PICO_UPS_URL}...")
+    print("[Backend] Starting background telemetry logger...")
     while True:
+        if not PICO_UPS_URL:
+            time.sleep(2)
+            continue
+            
         try:
             req = urllib.request.Request(f"{PICO_UPS_URL}/api/status")
             with urllib.request.urlopen(req, timeout=3) as resp:
@@ -99,6 +136,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f.read())
                 
         elif path == "/api/status":
+            if not PICO_UPS_URL:
+                self.send_response(503)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Smart UPS board not discovered yet. Waiting for UDP beacon..."}).encode('utf-8'))
+                return
             # Proxy status request to Pico
             try:
                 req = urllib.request.Request(f"{PICO_UPS_URL}/api/status")
@@ -114,6 +157,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": f"Failed to reach device: {e}"}).encode('utf-8'))
                 
         elif path == "/api/control":
+            if not PICO_UPS_URL:
+                self.send_response(503)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Smart UPS board not discovered yet. Waiting for UDP beacon..."}).encode('utf-8'))
+                return
             # Proxy control command to Pico
             try:
                 url = f"{PICO_UPS_URL}/api/control?{query}"
@@ -171,6 +220,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def start_server():
     init_db()
+    
+    # Start UDP discovery listener
+    start_udp_discovery()
     
     # Start background polling loop
     poll_thread = threading.Thread(target=polling_loop, daemon=True)
