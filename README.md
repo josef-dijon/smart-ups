@@ -1,6 +1,6 @@
 # Smart UPS Controller Platform
 
-[![Unit Tests](https://github.com/josef-dijon/smart_ups/actions/workflows/test.yml/badge.svg)](https://github.com/josef-dijon/smart_ups/actions/workflows/test.yml)
+[![Unit Tests](https://github.com/josef-dijon/smart-ups/actions/workflows/test.yml/badge.svg)](https://github.com/josef-dijon/smart-ups/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform: MicroPython](https://img.shields.io/badge/Platform-MicroPython-blue.svg)](https://micropython.org/)
 [![Docker Support](https://img.shields.io/badge/Docker-Supported-blue.svg?logo=docker)](https://www.docker.com/)
