@@ -72,11 +72,22 @@ Rather than executing raw system python or installing pip packages globally, all
 
 ### 6.2 Dockerized Dashboard Services
 The dashboard runs in a Python-slim container with a SQLite database backend to store historical battery/load graphs:
-* **Running/Deploying the Dashboard:**
+* **Running/Deploying the Dashboard (Auto-Discovery Mode):**
+  Auto-discovers the Pico board on the local network via UDP broadcast beacons (no IP hardcoding required). Requires mapping port `5555/udp`:
   ```bash
   docker run -d \
     -p 8080:8080 \
-    -e PICO_UPS_URL=http://172.17.0.1:8000 \
+    -p 5555:5555/udp \
+    -v smart_ups_data:/data \
+    --name ups-dashboard \
+    smart_ups_dashboard
+  ```
+* **Running/Deploying the Dashboard (Static Override Mode):**
+  If using static network routing or crossing VLAN boundaries where UDP broadcasts are blocked:
+  ```bash
+  docker run -d \
+    -p 8080:8080 \
+    -e PICO_UPS_URL=http://172.16.1.37 \
     -v smart_ups_data:/data \
     --name ups-dashboard \
     smart_ups_dashboard

@@ -45,10 +45,12 @@ def init_network():
         
     if nic.isconnected():
         print("[Boot] Network connection successful.")
+        config.ACTIVE_IP = nic.ifconfig()[0]
         print("[Boot] Interface Config (IP, Subnet, Gateway, DNS):", nic.ifconfig())
     else:
         print("[Boot] Warning: DHCP timeout or link is down. Fallback to static config.")
         nic.ifconfig(config.STATIC_IP)
+        config.ACTIVE_IP = nic.ifconfig()[0]
         print("[Boot] Interface Config:", nic.ifconfig())
 
 # Run hardware initialization on start

@@ -26,6 +26,26 @@ async def telemetry_loop(controller: LADController):
         # 1.5 second inter-read cycle delay
         await uasyncio.sleep(1.5)
 
+async def network_beacon_loop():
+    """
+    Broadcasts UDP discovery beacons every 5 seconds.
+    Enables auto-discovery by the Docker dashboard server.
+    """
+    print("[Main] Starting UDP broadcast discovery beacon loop...")
+    import usocket as socket
+    import config
+    while True:
+        if config.ACTIVE_IP and config.ACTIVE_IP != "0.0.0.0":
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                payload = '{"device": "smart_ups", "ip": "%s"}' % config.ACTIVE_IP
+                s.sendto(payload.encode('utf-8'), ('255.255.255.255', 5555))
+                s.close()
+            except Exception as e:
+                print("[Main] Failed to send UDP discovery beacon:", e)
+        await uasyncio.sleep(5)
+
 async def main_async():
     print("[Main] Initializing system nodes...")
     
@@ -49,6 +69,9 @@ async def main_async():
     # 5. Initialize and spawn the MQTT Telemetry Publisher task
     mqtt_publisher = MQTTTelemetryPublisher(controller)
     uasyncio.create_task(mqtt_publisher.start_loop())
+    
+    # 6. Spawn the UDP Broadcast Beacon discovery task
+    uasyncio.create_task(network_beacon_loop())
     
     # Keep main task alive indefinitely
     while True:

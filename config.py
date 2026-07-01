@@ -19,6 +19,7 @@ LAD_BAUD = 9600
 USE_DHCP = True
 # Fallback static configuration if USE_DHCP is False
 STATIC_IP = ("192.168.1.15", "255.255.255.0", "192.168.1.1", "8.8.8.8")
+ACTIVE_IP = "0.0.0.0"
 
 # 4. Web Daemon Configuration
 WEB_PORT = 80
