@@ -1,5 +1,11 @@
 # Smart UPS Controller Platform
 
+[![Unit Tests](https://github.com/josef-dijon/smart_ups/actions/workflows/test.yml/badge.svg)](https://github.com/josef-dijon/smart_ups/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform: MicroPython](https://img.shields.io/badge/Platform-MicroPython-blue.svg)](https://micropython.org/)
+[![Docker Support](https://img.shields.io/badge/Docker-Supported-blue.svg?logo=docker)](https://www.docker.com/)
+
+
 An advanced, open-source telemetry and controller platform designed for the **W5500-EVB-Pico** microcontroller, integrated with the **MEAN WELL LAD-600BU** power supply and a 24V nominal Lead-Acid (SLA) battery backup string.
 
 The platform provides automatic network discovery, real-time telemetry monitoring, local database history tracking, and native MQTT publishing.
