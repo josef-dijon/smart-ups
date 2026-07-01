@@ -58,8 +58,17 @@ uv run python deploy.py
 ```
 *(On Linux hosts, if permissions are denied, run `sudo chmod 666 /dev/ttyACM0` first to authorize USB port access).*
 
-### 3. Deploying the Dashboard Console (Docker)
-Rebuild and launch the dashboard container. Ensure you map port `5555/udp` to enable the auto-discovery mechanism:
+### 3. Deploying the Dashboard Console
+Rebuild and launch the dashboard console. You can deploy it using Docker Compose or standalone Docker CLI:
+
+#### Option A: Deploy via Docker Compose (Recommended)
+Simply build and run using docker-compose:
+```bash
+docker compose up -d --build
+```
+
+#### Option B: Deploy via Docker CLI
+Rebuild and launch the container manually. Ensure you map port `5555/udp` to enable the auto-discovery mechanism:
 ```bash
 docker build -t smart_ups_dashboard dashboard/
 docker run -d \
@@ -69,6 +78,7 @@ docker run -d \
   --name ups-dashboard \
   smart_ups_dashboard
 ```
+
 Open **[http://localhost:8080](http://localhost:8080)** in your browser. The dashboard will automatically transition from `Auto-Discovering...` to `Connected` the moment the Pico sends its first network broadcast.
 
 ---

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: ./dashboard
+    image: smart_ups_dashboard:latest
+    container_name: ups-dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "5555:5555/udp"
+    environment:
+      - DEMO_MODE=false
+      - PORT=8080
+      - DB_PATH=/data/history.db
+    volumes:
+      - dashboard_data:/data
+
+volumes:
+  dashboard_data:
