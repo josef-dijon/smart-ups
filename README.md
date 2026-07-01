@@ -102,6 +102,42 @@ The Pico web daemon exposes a simple JSON REST API on port `80`:
 
 ---
 
+## MQTT Telemetry Publishing
+
+The MicroPython core includes a background async loop that periodically publishes real-time telemetry to an MQTT broker:
+
+* **Default Status Topic:** `smart_ups/status`
+* **Publishing Interval:** Configurable (default is every `10` seconds).
+* **Payload Format:** A minified JSON object containing all active telemetry registers (identical to the REST API payload minus the local `last_update` timestamp). Example:
+  ```json
+  {
+    "ac_ok": true,
+    "battery_voltage": 27.60,
+    "cell1_voltage": 13.80,
+    "cell2_voltage": 13.80,
+    "grid_voltage": 230.1,
+    "load_current": 1.45,
+    "lad_power_supply": true,
+    "bat_chgfull": true,
+    "bat_chging": false,
+    "bat_uvp": false
+  }
+  ```
+
+To customize your MQTT parameters, edit **[src/config.py](file:///home/josef/dev/smart_ups/src/config.py#L28-L35)**:
+```python
+# 5. MQTT Configuration
+MQTT_BROKER = "192.168.1.50"       # IP Address of Mosquitto / Home Assistant Broker
+MQTT_PORT = 1883                  # MQTT Port
+MQTT_CLIENT_ID = "smart_ups_pico" # Client identifier
+MQTT_TOPIC_PREFIX = "smart_ups"   # Topic namespace prefix
+MQTT_USER = None                  # Username (None or String)
+MQTT_PASSWORD = None              # Password (None or String)
+MQTT_PUBLISH_INTERVAL = 10        # Interval in seconds
+```
+
+---
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
