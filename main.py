@@ -3,6 +3,7 @@ import gc
 import time
 from lad_controller import LADController
 import web_server
+from mqtt_client import MQTTTelemetryPublisher
 
 async def telemetry_loop(controller: LADController):
     """
@@ -44,6 +45,10 @@ async def main_async():
     
     # 4. Spawn the telemetry task in the background loop
     uasyncio.create_task(telemetry_loop(controller))
+    
+    # 5. Initialize and spawn the MQTT Telemetry Publisher task
+    mqtt_publisher = MQTTTelemetryPublisher(controller)
+    uasyncio.create_task(mqtt_publisher.start_loop())
     
     # Keep main task alive indefinitely
     while True:

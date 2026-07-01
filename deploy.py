@@ -8,7 +8,8 @@ FILES_TO_DEPLOY = [
     "config.py",
     "crc8.py",
     "lad_controller.py",
-    "web_server.py"
+    "web_server.py",
+    "mqtt_client.py"
 ]
 
 def deploy():

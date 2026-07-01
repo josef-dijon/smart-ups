@@ -22,3 +22,13 @@ STATIC_IP = ("192.168.1.15", "255.255.255.0", "192.168.1.1", "8.8.8.8")
 # 4. Web Daemon Configuration
 WEB_PORT = 80
 JSON_API_PATH = "/api/status"
+
+# 5. MQTT Configuration (Telemetry Publishing)
+MQTT_BROKER = "192.168.1.50"
+MQTT_PORT = 1883
+MQTT_CLIENT_ID = "smart_ups_pico"
+MQTT_TOPIC_PREFIX = "smart_ups"
+MQTT_USER = None
+MQTT_PASSWORD = None
+MQTT_PUBLISH_INTERVAL = 10
+
