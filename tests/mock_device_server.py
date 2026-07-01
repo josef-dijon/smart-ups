@@ -33,6 +33,77 @@ telemetry = {
     "uvp_threshold": 21.5
 }
 
+import time
+import random
+
+def update_mock_telemetry():
+    """
+    Simulates a 120-second grid blackout cycle:
+      - 0 to 60s: Grid is healthy, charging/float state.
+      - 60 to 120s: Grid dropout (blackout), discharging state under load.
+    """
+    cycle = int(time.time()) % 120
+    is_grid_up = (cycle < 60)
+    
+    if is_grid_up:
+        telemetry["ac_ok"] = True
+        telemetry["grid_voltage"] = round(230.2 + random.uniform(-1.5, 1.5), 1)
+        telemetry["lad_power_supply"] = True
+        
+        if telemetry["bat_sw_off"]:
+            # Battery isolated/disconnected
+            telemetry["bat_chgfull"] = False
+            telemetry["bat_chging"] = False
+            telemetry["battery_voltage"] = 25.20
+            telemetry["cell1_voltage"] = 12.60
+            telemetry["cell2_voltage"] = 12.60
+            telemetry["bat_uvp"] = False
+        else:
+            # Battery charging or full
+            charging_phase = (cycle < 25)
+            if charging_phase:
+                telemetry["bat_chgfull"] = False
+                telemetry["bat_chging"] = True
+                telemetry["battery_voltage"] = round(26.0 + (cycle * 0.064), 2)
+            else:
+                telemetry["bat_chgfull"] = True
+                telemetry["bat_chging"] = False
+                telemetry["battery_voltage"] = 27.60
+                
+            telemetry["cell1_voltage"] = round(telemetry["battery_voltage"] / 2.0, 2)
+            telemetry["cell2_voltage"] = round(telemetry["battery_voltage"] / 2.0, 2)
+            telemetry["bat_uvp"] = False
+            
+        telemetry["load_current"] = round(1.45 + random.uniform(-0.05, 0.05), 2)
+    else:
+        # Mains dropout simulation
+        telemetry["ac_ok"] = False
+        telemetry["grid_voltage"] = 0.0
+        telemetry["lad_power_supply"] = False
+        telemetry["bat_chgfull"] = False
+        telemetry["bat_chging"] = False
+        
+        if telemetry["bat_sw_off"]:
+            # Battery isolated, zero load output
+            telemetry["load_current"] = 0.0
+            telemetry["battery_voltage"] = 25.00
+            telemetry["cell1_voltage"] = 12.50
+            telemetry["cell2_voltage"] = 12.50
+            telemetry["bat_uvp"] = False
+        else:
+            # Active backup discharging under load
+            discharge_elapsed = cycle - 60
+            # Instant drop under load, then gradual discharge
+            telemetry["battery_voltage"] = round(25.0 - (discharge_elapsed * 0.075), 2)
+            telemetry["cell1_voltage"] = round(telemetry["battery_voltage"] / 2.0, 2)
+            telemetry["cell2_voltage"] = round(telemetry["battery_voltage"] / 2.0, 2)
+            
+            # Check under-voltage threshold (21.5V)
+            telemetry["bat_uvp"] = (telemetry["battery_voltage"] < telemetry["uvp_threshold"])
+            
+            # Current load increases slightly due to lower battery voltage supplying load inverter
+            telemetry["load_current"] = round(3.5 + random.uniform(-0.1, 0.1), 2)
+
 class MockDeviceHandler(BaseHTTPRequestHandler):
     
     def log_message(self, format, *args):
@@ -56,6 +127,7 @@ class MockDeviceHandler(BaseHTTPRequestHandler):
         query = urllib.parse.parse_qs(parsed_url.query)
 
         if path == "/api/status":
+            update_mock_telemetry()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
