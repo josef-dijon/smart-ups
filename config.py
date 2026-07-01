@@ -1,0 +1,24 @@
+# Hardware Configuration for Smart UPS Controller Platform
+# Compute Core: W5500-EVB-Pico (RP2040 Microcontroller)
+
+# 1. W5500 Internal SPI Routing (SPI1 Peripheral Block)
+W5500_MISO = 12
+W5500_MOSI = 13
+W5500_SCLK = 14
+W5500_CS = 15
+W5500_RST = 11
+
+# 2. LAD-600BU UART1 Signaling Interface
+LAD_UART_ID = 1
+LAD_TX_PIN = 4
+LAD_RX_PIN = 5
+LAD_BAUD = 9600
+
+# 3. Network Configuration
+USE_DHCP = True
+# Fallback static configuration if USE_DHCP is False
+STATIC_IP = ("192.168.1.15", "255.255.255.0", "192.168.1.1", "8.8.8.8")
+
+# 4. Web Daemon Configuration
+WEB_PORT = 80
+JSON_API_PATH = "/api/status"
