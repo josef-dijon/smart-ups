@@ -330,6 +330,7 @@
             .connection-status { width: 100%; justify-content: space-between; }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
@@ -512,6 +513,17 @@
             </div>
         </div>
 
+        <!-- History Graph Card -->
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-title">
+                <span>Historical Performance (24 Hours)</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+            </div>
+            <div style="position: relative; height: 350px; width: 100%;">
+                <canvas id="historyChart"></canvas>
+            </div>
+        </div>
+
         <div class="fuse-notice">
             <span class="fuse-icon">⚠️</span>
             <div>
@@ -524,6 +536,7 @@
         let isBuzzerMuted = false;
         let isIsolated = false;
         let targetBaseUrl = "";
+        let historyChart = null;
 
         // Load configuration on boot
         window.addEventListener('load', () => {
@@ -536,7 +549,9 @@
                 targetBaseUrl = "";
             }
             fetchStatus();
+            fetchHistory();
             setInterval(fetchStatus, 1500);
+            setInterval(fetchHistory, 10000);
         });
 
         function saveSettings() {
@@ -551,6 +566,7 @@
             targetBaseUrl = url;
             alert(`Target address set to: ${url || "Relative Nginx Proxy"}`);
             fetchStatus();
+            fetchHistory();
         }
 
         async function fetchStatus() {
@@ -563,6 +579,131 @@
             } catch (err) {
                 console.error("Error fetching telemetry:", err);
                 setConnectionOnline(false);
+            }
+        }
+
+        async function fetchHistory() {
+            try {
+                const res = await fetch(`${targetBaseUrl}/api/history`);
+                if (!res.ok) throw new Error("History API responded with error");
+                const data = await res.json();
+                updateChart(data);
+            } catch (err) {
+                console.error("Error fetching history logs:", err);
+            }
+        }
+
+        function updateChart(data) {
+            const labels = data.map(item => item.time);
+            const batteryData = data.map(item => item.battery_voltage);
+            const gridData = data.map(item => item.grid_voltage);
+            const currentData = data.map(item => item.load_current);
+
+            if (!historyChart) {
+                const ctx = document.getElementById('historyChart').getContext('2d');
+                historyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Grid Voltage (V)',
+                                data: gridData,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.03)',
+                                yAxisID: 'y-voltage',
+                                tension: 0.2,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 1
+                            },
+                            {
+                                label: 'Battery Voltage (V)',
+                                data: batteryData,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.03)',
+                                yAxisID: 'y-voltage',
+                                tension: 0.2,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 1
+                            },
+                            {
+                                label: 'Load Current (A)',
+                                data: currentData,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.03)',
+                                yAxisID: 'y-current',
+                                tension: 0.2,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            'y-voltage': {
+                                type: 'linear',
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Voltage (V)',
+                                    color: '#94a3b8'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            },
+                            'y-current': {
+                                type: 'linear',
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Current (A)',
+                                    color: '#94a3b8'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    maxTicksLimit: 12
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#f8fafc'
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                historyChart.data.labels = labels;
+                historyChart.data.datasets[0].data = gridData;
+                historyChart.data.datasets[1].data = batteryData;
+                historyChart.data.datasets[2].data = currentData;
+                historyChart.update();
             }
         }
 

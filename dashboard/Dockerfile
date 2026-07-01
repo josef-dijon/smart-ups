@@ -1,13 +1,21 @@
-FROM nginx:alpine
+FROM python:3.12-slim
 
-# Copy static dashboard page
-COPY index.html /usr/share/nginx/html/index.html
+# Create data directory for persistent SQLite database
+RUN mkdir -p /data
 
-# Copy Nginx template for dynamic reverse proxy substitution
-COPY default.conf.template /etc/nginx/templates/default.conf.template
+# Set the working directory
+WORKDIR /app
 
-# Default fallback environment variable to prevent Nginx startup syntax errors
+# Copy the server and dashboard assets
+COPY index.html server.py ./
+
+# Expose the server port
+EXPOSE 8080
+
+# Default configuration environment variables
+ENV PORT=8080
+ENV DB_PATH=/data/history.db
 ENV PICO_UPS_URL=http://127.0.0.1:9999
 
-# Expose port 80
-EXPOSE 80
+# Start the Python unified API and static file server
+CMD ["python", "server.py"]
