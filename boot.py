@@ -17,7 +17,7 @@ def init_network():
     # 2. Configure SPI1 interface for W5500
     # GP12 (MISO), GP13 (MOSI), GP14 (SCLK), GP15 (CS)
     spi = SPI(
-        1, 
+        config.W5500_SPI_ID, 
         baudrate=20000000, 
         polarity=0, 
         phase=0, 

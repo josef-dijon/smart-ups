@@ -1,12 +1,13 @@
 # Hardware Configuration for Smart UPS Controller Platform
 # Compute Core: W5500-EVB-Pico (RP2040 Microcontroller)
 
-# 1. W5500 Internal SPI Routing (SPI1 Peripheral Block)
-W5500_MISO = 12
-W5500_MOSI = 13
-W5500_SCLK = 14
-W5500_CS = 15
-W5500_RST = 11
+# 1. W5500 Internal SPI Routing (SPI0 Peripheral Block)
+W5500_SPI_ID = 0
+W5500_MISO = 16
+W5500_MOSI = 19
+W5500_SCLK = 18
+W5500_CS = 17
+W5500_RST = 20
 
 # 2. LAD-600BU UART1 Signaling Interface
 LAD_UART_ID = 1

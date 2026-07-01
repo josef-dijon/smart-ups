@@ -7,13 +7,14 @@
 
 ## 2. Hardwired Electrical Interconnect Matrix
 
-### 2.1 W5500 Internal SPI Routing (SPI1 Peripheral Block)
-The AI agent must explicitly use these exact pin configurations when modifying network or socket wrappers. Do not assume standard external Raspberry Pi Pico SPI0 layouts:
-* **MISO (RX):** `GP12`
-* **MOSI (TX):** `GP13`
-* **SCLK (SCK):** `GP14`
-* **CS (Chip Select):** `GP15`
-* **RST (Reset):** `GP11`
+### 2.1 W5500 Internal SPI Routing (SPI0 Peripheral Block)
+The W5500 controller is hardwired to the following dedicated SPI0 pins:
+* **MISO (RX):** `GP16`
+* **MOSI (TX):** `GP19`
+* **SCLK (SCK):** `GP18`
+* **CS (Chip Select):** `GP17`
+* **RST (Reset):** `GP20`
+
 
 ### 2.2 LAD-600BU UART1 Signaling Interface
 * **Pico TX Pin (Output):** `GP4` -> Connects to LAD CN2 Pin 13 (UART_RX)
