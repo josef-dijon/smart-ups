@@ -650,17 +650,7 @@
         <!-- History Charts Section -->
         <!-- Time Range Selection Controls -->
         <div class="card" style="margin-top: 1.5rem; padding: 1.25rem;">
-            <!-- Line 1: Presets Buttons -->
-            <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; width: 100%; margin-bottom: 1rem;">
-                <button class="btn btn-preset" id="preset_10m" onclick="setPresetRange('10m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">10 Min</button>
-                <button class="btn btn-preset" id="preset_1h" onclick="setPresetRange('1h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">1 Hour</button>
-                <button class="btn btn-preset" id="preset_6h" onclick="setPresetRange('6h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">6 Hours</button>
-                <button class="btn btn-preset active" id="preset_24h" onclick="setPresetRange('24h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">24 Hours</button>
-                <button class="btn btn-preset" id="preset_1w" onclick="setPresetRange('1w')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">1 Week</button>
-                <button class="btn btn-preset" id="preset_1m" onclick="setPresetRange('1m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">1 Month</button>
-            </div>
-            
-            <!-- Line 2: Date Selectors -->
+            <!-- Line 1: Date Selectors -->
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; width: 100%; margin-bottom: 1rem;">
                 <!-- Left: Start Time Widget -->
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; min-width: 200px;">
@@ -672,6 +662,16 @@
                     <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">End:</span>
                     <input type="datetime-local" id="time_end" class="control-input" style="margin: 0; padding: 0.4rem; font-size: 0.85rem; width: 100%;" onchange="handleCustomTimeChange()">
                 </div>
+            </div>
+
+            <!-- Line 2: Presets Buttons (Full Width) -->
+            <div style="display: flex; gap: 0.35rem; width: 100%; margin-bottom: 1rem;">
+                <button class="btn btn-preset" id="preset_10m" onclick="setPresetRange('10m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0; flex: 1; text-align: center;">10 Min</button>
+                <button class="btn btn-preset" id="preset_1h" onclick="setPresetRange('1h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0; flex: 1; text-align: center;">1 Hour</button>
+                <button class="btn btn-preset" id="preset_6h" onclick="setPresetRange('6h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0; flex: 1; text-align: center;">6 Hours</button>
+                <button class="btn btn-preset active" id="preset_24h" onclick="setPresetRange('24h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0; flex: 1; text-align: center;">24 Hours</button>
+                <button class="btn btn-preset" id="preset_1w" onclick="setPresetRange('1w')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0; flex: 1; text-align: center;">1 Week</button>
+                <button class="btn btn-preset" id="preset_1m" onclick="setPresetRange('1m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0; flex: 1; text-align: center;">1 Month</button>
             </div>
 
             <!-- Line 3: Download Buttons -->
