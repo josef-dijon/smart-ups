@@ -834,11 +834,11 @@
                             label: 'Grid Voltage (V)',
                             data: gridData,
                             borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.03)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.01)',
                             tension: 0.2,
-                            fill: true,
-                            borderWidth: 2,
-                            pointRadius: 1
+                            fill: false,
+                            borderWidth: 1.5,
+                            pointRadius: 0.5
                         }]
                     },
                     options: {
@@ -879,11 +879,11 @@
                             label: 'String Voltage (V)',
                             data: batteryData,
                             borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.03)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.01)',
                             tension: 0.2,
-                            fill: true,
-                            borderWidth: 2,
-                            pointRadius: 1
+                            fill: false,
+                            borderWidth: 1.5,
+                            pointRadius: 0.5
                         }]
                     },
                     options: {
@@ -955,7 +955,7 @@
                                 position: 'left',
                                 min: 18,
                                 max: 30,
-                                title: { display: true, text: 'Bus Voltage (V)', color: '#94a3b8' },
+                                title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                                 ticks: { color: '#94a3b8' }
                             },
