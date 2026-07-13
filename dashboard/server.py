@@ -25,7 +25,7 @@ latest_telemetry_time = 0.0
 telemetry_lock = threading.Lock()
 
 def seed_demo_history():
-    """Seeds the SQLite database with 100 points of realistic historical cycle data."""
+    """Seeds the SQLite database with realistic historical cycle data spanning the past 30 days."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
@@ -36,32 +36,37 @@ def seed_demo_history():
         conn.close()
         return
         
-    print("[Backend] Seeding SQLite database with 100 historical demo points...", flush=True)
+    print("[Backend] Seeding SQLite database with historical demo points spanning 30 days...", flush=True)
     
     now = time.time()
-    for i in range(100):
-        t_offset = (100 - i) * 15  # 15 second intervals
-        point_time = now - t_offset
+    points = []
+    
+    # Generate points for the past 30 days (hourly)
+    for hour_offset in range(720, 24, -1):
+        point_time = now - hour_offset * 3600
+        points.append(point_time)
         
-        # 1200-second cycle:
-        # 0 to 600s: Grid up, 600s to 1200s: Blackout!
-        cycle = int(point_time) % 1200
+    # Generate points for the last 24 hours (every 10 minutes)
+    for min_offset in range(144, 0, -1):
+        point_time = now - min_offset * 600
+        points.append(point_time)
+        
+    for pt in points:
+        cycle = int(pt) % 1200
         is_grid_up = (cycle < 600)
         
         if is_grid_up:
             grid_v = round(230.2 + random.uniform(-1.0, 1.0), 1)
-            # battery charges from 25.0V up to 27.6V
             charge_progress = min(300, cycle)
             bat_v = round(25.0 + (charge_progress * 0.0087), 2)
             load_c = round(1.45 + random.uniform(-0.05, 0.05), 2)
         else:
             grid_v = 0.0
             discharge_elapsed = cycle - 600
-            # battery discharges down to 23.8V
             bat_v = round(25.0 - (discharge_elapsed * 0.002), 2)
             load_c = round(3.5 + random.uniform(-0.1, 0.1), 2)
             
-        timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(point_time))
+        timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(pt))
         cursor.execute(
             "INSERT INTO ups_history (timestamp, battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?, ?)",
             (timestamp_str, bat_v, grid_v, load_c)
@@ -152,7 +157,7 @@ def polling_loop():
                     "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?)",
                     (battery_voltage, grid_voltage, load_current)
                 )
-                cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-24 hours')")
+                cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-30 days')")
                 conn.commit()
                 conn.close()
             except Exception as e:
@@ -193,7 +198,7 @@ def polling_loop():
                         "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?)",
                         (battery_voltage, grid_voltage, load_current)
                     )
-                    cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-24 hours')")
+                    cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-30 days')")
                     conn.commit()
                     conn.close()
                     last_db_write_time = now_time
@@ -331,28 +336,72 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": f"Failed to control device: {e}"}).encode('utf-8'))
                 
         elif path == "/api/history":
-            # Retrieve historical logs from SQLite
             try:
+                params = urllib.parse.parse_qs(query)
+                start_param = params.get("start", [None])[0]
+                end_param = params.get("end", [None])[0]
+
+                if start_param:
+                    start_param = start_param.replace('T', ' ')
+                if end_param:
+                    end_param = end_param.replace('T', ' ')
+
+                # Parse start/end datetimes to calculate duration for downsampling
+                import datetime as dt
+                now_dt = dt.datetime.now()
+                s_dt = now_dt - dt.timedelta(hours=24)
+                e_dt = now_dt
+
+                if start_param:
+                    try:
+                        s_dt = dt.datetime.strptime(start_param.split('.')[0], "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        try:
+                            s_dt = dt.datetime.strptime(start_param, "%Y-%m-%d %H:%M")
+                        except Exception:
+                            pass
+                if end_param:
+                    try:
+                        e_dt = dt.datetime.strptime(end_param.split('.')[0], "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        try:
+                            e_dt = dt.datetime.strptime(end_param, "%Y-%m-%d %H:%M")
+                        except Exception:
+                            pass
+
+                duration_sec = (e_dt - s_dt).total_seconds()
+
+                # Pick standard downsampling group interval based on duration
+                if duration_sec <= 600: # 10 mins
+                    group_expr = "strftime('%Y-%m-%d %H:%M:%S', datetime(timestamp, 'localtime'))"
+                elif duration_sec <= 3600 * 2: # 2 hours
+                    group_expr = "strftime('%Y-%m-%d %H:%M:', datetime(timestamp, 'localtime')) || (strftime('%S', datetime(timestamp, 'localtime')) / 10 * 10)"
+                elif duration_sec <= 3600 * 12: # 12 hours
+                    group_expr = "strftime('%Y-%m-%d %H:%M', datetime(timestamp, 'localtime'))"
+                elif duration_sec <= 86400 * 3: # 3 days
+                    group_expr = "strftime('%Y-%m-%d %H:', datetime(timestamp, 'localtime')) || (strftime('%M', datetime(timestamp, 'localtime')) / 5 * 5)"
+                elif duration_sec <= 86400 * 10: # 10 days
+                    group_expr = "strftime('%Y-%m-%d %H:', datetime(timestamp, 'localtime')) || (strftime('%M', datetime(timestamp, 'localtime')) / 30 * 30)"
+                else: # Up to 30 days
+                    group_expr = "strftime('%Y-%m-%d %H:00', datetime(timestamp, 'localtime'))"
+
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
-                # Aggregate readings by minute to return up to 24 hours of data efficiently
-                cursor.execute("""
+                query_str = f"""
                     SELECT 
-                        strftime('%H:%M', datetime(timestamp, 'localtime')) as min_time,
+                        {group_expr} as t_time,
                         ROUND(AVG(battery_voltage), 2),
                         ROUND(AVG(grid_voltage), 1),
                         ROUND(AVG(load_current), 2)
                     FROM ups_history 
-                    GROUP BY strftime('%Y-%m-%d %H:%M', datetime(timestamp, 'localtime'))
-                    ORDER BY timestamp DESC
-                    LIMIT 1440
-                """)
+                    WHERE datetime(timestamp, 'localtime') BETWEEN ? AND ?
+                    GROUP BY t_time
+                    ORDER BY t_time ASC
+                """
+                cursor.execute(query_str, (s_dt.strftime("%Y-%m-%d %H:%M:%S"), e_dt.strftime("%Y-%m-%d %H:%M:%S")))
                 rows = cursor.fetchall()
                 conn.close()
-                
-                # Reverse to sort ascending for Chart.js timeline
-                rows.reverse()
-                
+
                 history_data = []
                 for row in rows:
                     history_data.append({
@@ -361,7 +410,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "grid_voltage": row[2],
                         "load_current": row[3]
                     })
-                    
+
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
