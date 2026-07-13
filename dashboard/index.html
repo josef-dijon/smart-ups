@@ -350,11 +350,11 @@
         <!-- Main Layout Grid -->
 
         <div class="grid">
-            <!-- AC Grid Status -->
+            <!-- Panel 1: Grid Input Power Panel -->
             <div class="card">
-                <div class="card-title">
-                    <span>AC Grid & Main Power</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <span>Grid Input Power</span>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 </div>
                 <div class="metric-group">
                     <div class="metric-row">
@@ -368,25 +368,21 @@
                         <span class="metric-label">Grid AC Status</span>
                         <span class="badge" id="ac_status_badge">UNKNOWN</span>
                     </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Load Current</span>
-                        <div>
-                            <span class="metric-val" id="load_current">--.--</span>
-                            <span class="metric-unit">A</span>
-                        </div>
-                    </div>
+                </div>
+                <div style="margin-top: 2rem; height: 220px; position: relative; width: 100%;">
+                    <canvas id="gridChart"></canvas>
                 </div>
             </div>
 
-            <!-- Battery String Status -->
+            <!-- Panel 2: Battery Management & Health Panel -->
             <div class="card">
-                <div class="card-title">
-                    <span>Battery Series String</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="12" rx="2" ry="2"/><line x1="6" y1="11" x2="10" y2="11"/><line x1="6" y1="15" x2="12" y2="15"/><line x1="22" y1="11" x2="22" y2="15"/></svg>
+                <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <span>Battery String & Cells</span>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="12" rx="2" ry="2"/><line x1="6" y1="11" x2="10" y2="11"/><line x1="6" y1="15" x2="12" y2="15"/><line x1="22" y1="11" x2="22" y2="15"/></svg>
                 </div>
                 <div class="metric-group">
                     <div class="metric-row">
-                        <span class="metric-label">Total Battery Voltage</span>
+                        <span class="metric-label">Total String Voltage</span>
                         <div>
                             <span class="metric-val" id="battery_voltage">--.--</span>
                             <span class="metric-unit">V</span>
@@ -400,37 +396,29 @@
                         <span class="metric-label">Charge State</span>
                         <span class="badge" id="charge_badge">UNKNOWN</span>
                     </div>
-                </div>
-            </div>
-
-            <!-- Cell Supervision -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Discrete Cell Inspection</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                </div>
-                <div class="metric-group">
-                    <div>
+                    
+                    <!-- Cells discrete view -->
+                    <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
                         <div class="metric-row" style="border: none; padding-bottom: 0;">
-                            <span class="metric-label">Battery 1 Voltage (Cell 1)</span>
+                            <span class="metric-label" style="font-size: 0.85rem;">Battery 1 Voltage (Cell 1)</span>
                             <div>
-                                <span class="metric-val" style="font-size: 1.1rem;" id="cell1_voltage">--.--</span>
-                                <span class="metric-unit">V</span>
+                                <span class="metric-val" style="font-size: 1rem;" id="cell1_voltage">--.--</span>
+                                <span class="metric-unit" style="font-size: 0.8rem;">V</span>
                             </div>
                         </div>
-                        <div class="cell-bar-container">
+                        <div class="cell-bar-container" style="height: 6px; margin-top: 4px;">
                             <div class="cell-bar" id="cell1_bar"></div>
                         </div>
                     </div>
                     <div>
                         <div class="metric-row" style="border: none; padding-bottom: 0;">
-                            <span class="metric-label">Battery 2 Voltage (Cell 2)</span>
+                            <span class="metric-label" style="font-size: 0.85rem;">Battery 2 Voltage (Cell 2)</span>
                             <div>
-                                <span class="metric-val" style="font-size: 1.1rem;" id="cell2_voltage">--.--</span>
-                                <span class="metric-unit">V</span>
+                                <span class="metric-val" style="font-size: 1rem;" id="cell2_voltage">--.--</span>
+                                <span class="metric-unit" style="font-size: 0.8rem;">V</span>
                             </div>
                         </div>
-                        <div class="cell-bar-container">
+                        <div class="cell-bar-container" style="height: 6px; margin-top: 4px;">
                             <div class="cell-bar" id="cell2_bar"></div>
                         </div>
                     </div>
@@ -439,15 +427,36 @@
                         <span class="badge" id="balance_badge">UNKNOWN</span>
                     </div>
                 </div>
+                <div style="margin-top: 2rem; height: 220px; position: relative; width: 100%;">
+                    <canvas id="batteryChart"></canvas>
+                </div>
             </div>
 
-            <!-- Diagnostics -->
+            <!-- Panel 3: DC Bus & Load Management Panel -->
             <div class="card">
-                <div class="card-title">
-                    <span>Safety Limits & Diagnostics</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                    <span>DC Bus & Load Management</span>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                 </div>
                 <div class="metric-group">
+                    <div class="metric-row">
+                        <span class="metric-label">DC Bus Voltage</span>
+                        <div>
+                            <span class="metric-val" id="battery_voltage_bus">--.--</span>
+                            <span class="metric-unit">V</span>
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Load Current</span>
+                        <div>
+                            <span class="metric-val" id="load_current">--.--</span>
+                            <span class="metric-unit">A</span>
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Standby Switch</span>
+                        <span class="badge" id="relay_state_badge">UNKNOWN</span>
+                    </div>
                     <div class="metric-row">
                         <span class="metric-label">Hardware UVP Limit</span>
                         <div>
@@ -463,57 +472,26 @@
                         <span class="metric-label">Overload Warning</span>
                         <span class="badge" id="olp_badge">UNKNOWN</span>
                     </div>
-                </div>
-            </div>
-
-            <!-- Standby Control -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Isolate / Backup Relay</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </div>
-                <div class="metric-group">
-                    <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.5rem;">
-                        Isolate the energy storage string to prevent backup, or re-enable the automatic backup path.
-                    </p>
-                    <div class="metric-row">
-                        <span class="metric-label">Standby Switch</span>
-                        <span class="badge" id="relay_state_badge">UNKNOWN</span>
+                    
+                    <!-- Controls section -->
+                    <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 0.6rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-danger" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; margin: 0;" id="btn_isolate" onclick="controlAction('isolate')">Isolate Relay</button>
+                            <button class="btn btn-success" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; margin: 0;" id="btn_connect" onclick="controlAction('connect')">Restore Relay</button>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                            <span class="metric-label" style="font-size: 0.8rem;">Buzzer Control</span>
+                            <button class="btn" style="margin: 0; width: auto; font-size: 0.8rem; padding: 0.4rem 0.8rem;" id="btn_buzzer" onclick="toggleBuzzer()">Toggle Mute</button>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                            <input type="number" step="0.1" min="18.0" max="28.0" class="control-input" style="margin: 0; font-size: 0.8rem; padding: 0.4rem; flex-grow: 1;" id="input_uvp" placeholder="UVP, e.g. 21.5">
+                            <button class="btn" style="margin: 0; width: auto; font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="submitUvp()">Write UVP</button>
+                        </div>
                     </div>
-                    <button class="btn btn-danger" id="btn_isolate" onclick="controlAction('isolate')">Isolate Battery Relay</button>
-                    <button class="btn btn-success" id="btn_connect" onclick="controlAction('connect')">Restore Backup Relay</button>
                 </div>
-            </div>
-
-            <!-- Parameters Control -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Mute & Thresholds</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M23 9l-6 6M17 9l6 6"/></svg>
+                <div style="margin-top: 1.5rem; height: 220px; position: relative; width: 100%;">
+                    <canvas id="busLoadChart"></canvas>
                 </div>
-                <div class="metric-group">
-                    <div class="metric-row">
-                        <span class="metric-label">Buzzer Control</span>
-                        <button class="btn" style="margin: 0; width: auto;" id="btn_buzzer" onclick="toggleBuzzer()">Toggle Mute</button>
-                    </div>
-                    <div style="margin-top: 0.5rem;">
-                        <span class="metric-label" style="display: block; margin-bottom: 0.4rem;">Set Runtime UVP (V)</span>
-                        <input type="number" step="0.1" min="18.0" max="28.0" class="control-input" id="input_uvp" placeholder="e.g. 21.5">
-                        <button class="btn" onclick="submitUvp()">Write UVP Limit</button>
-                    </div>
-                    <div class="write-notice">Writes target processor volatile RAM</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- History Graph Card -->
-        <div class="card" style="margin-top: 1.5rem;">
-            <div class="card-title">
-                <span>Historical Performance (24 Hours)</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-            </div>
-            <div style="position: relative; height: 350px; width: 100%;">
-                <canvas id="historyChart"></canvas>
             </div>
         </div>
 
@@ -528,7 +506,9 @@
     <script>
         let isBuzzerMuted = false;
         let isIsolated = false;
-        let historyChart = null;
+        let gridChart = null;
+        let batteryChart = null;
+        let busLoadChart = null;
 
         // Load configuration on boot
         window.addEventListener('load', () => {
@@ -572,111 +552,169 @@
             const gridData = data.map(item => item.grid_voltage);
             const currentData = data.map(item => item.load_current);
 
-            if (!historyChart) {
-                const ctx = document.getElementById('historyChart').getContext('2d');
-                historyChart = new Chart(ctx, {
+            // 1. Grid Chart
+            if (!gridChart) {
+                const ctx = document.getElementById('gridChart').getContext('2d');
+                gridChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Grid Voltage (V)',
+                            data: gridData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.03)',
+                            tension: 0.2,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                min: 0,
+                                max: 260,
+                                title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8', maxTicksLimit: 5 }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } else {
+                gridChart.data.labels = labels;
+                gridChart.data.datasets[0].data = gridData;
+                gridChart.update();
+            }
+
+            // 2. Battery Chart
+            if (!batteryChart) {
+                const ctx = document.getElementById('batteryChart').getContext('2d');
+                batteryChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'String Voltage (V)',
+                            data: batteryData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.03)',
+                            tension: 0.2,
+                            fill: true,
+                            borderWidth: 2,
+                            pointRadius: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                min: 18,
+                                max: 30,
+                                title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8', maxTicksLimit: 5 }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } else {
+                batteryChart.data.labels = labels;
+                batteryChart.data.datasets[0].data = batteryData;
+                batteryChart.update();
+            }
+
+            // 3. Bus & Load Chart
+            if (!busLoadChart) {
+                const ctx = document.getElementById('busLoadChart').getContext('2d');
+                busLoadChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
                         datasets: [
                             {
-                                label: 'Grid Voltage (V)',
-                                data: gridData,
-                                borderColor: '#3b82f6',
-                                backgroundColor: 'rgba(59, 130, 246, 0.03)',
-                                yAxisID: 'y-voltage',
-                                tension: 0.2,
-                                fill: true,
-                                borderWidth: 2,
-                                pointRadius: 1
-                            },
-                            {
-                                label: 'Battery Voltage (V)',
+                                label: 'Bus Voltage (V)',
                                 data: batteryData,
                                 borderColor: '#10b981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.03)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.01)',
                                 yAxisID: 'y-voltage',
                                 tension: 0.2,
-                                fill: true,
-                                borderWidth: 2,
-                                pointRadius: 1
+                                fill: false,
+                                borderWidth: 1.5,
+                                pointRadius: 0.5
                             },
                             {
                                 label: 'Load Current (A)',
                                 data: currentData,
                                 borderColor: '#f59e0b',
-                                backgroundColor: 'rgba(245, 158, 11, 0.03)',
+                                backgroundColor: 'rgba(245, 158, 11, 0.01)',
                                 yAxisID: 'y-current',
                                 tension: 0.2,
-                                fill: true,
-                                borderWidth: 2,
-                                pointRadius: 1
+                                fill: false,
+                                borderWidth: 1.5,
+                                pointRadius: 0.5
                             }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
+                        interaction: { mode: 'index', intersect: false },
                         scales: {
                             'y-voltage': {
                                 type: 'linear',
                                 position: 'left',
-                                title: {
-                                    display: true,
-                                    text: 'Voltage (V)',
-                                    color: '#94a3b8'
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.05)'
-                                },
-                                ticks: {
-                                    color: '#94a3b8'
-                                }
+                                min: 18,
+                                max: 30,
+                                title: { display: true, text: 'Bus Voltage (V)', color: '#94a3b8' },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8' }
                             },
                             'y-current': {
                                 type: 'linear',
                                 position: 'right',
-                                title: {
-                                    display: true,
-                                    text: 'Current (A)',
-                                    color: '#94a3b8'
-                                },
-                                grid: {
-                                    drawOnChartArea: false
-                                },
-                                ticks: {
-                                    color: '#94a3b8'
-                                }
+                                min: 0,
+                                title: { display: true, text: 'Current (A)', color: '#94a3b8' },
+                                grid: { drawOnChartArea: false },
+                                ticks: { color: '#94a3b8' }
                             },
                             x: {
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.05)'
-                                },
-                                ticks: {
-                                    color: '#94a3b8',
-                                    maxTicksLimit: 12
-                                }
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8', maxTicksLimit: 5 }
                             }
                         },
                         plugins: {
                             legend: {
-                                labels: {
-                                    color: '#f8fafc'
-                                }
+                                display: true,
+                                position: 'top',
+                                labels: { color: '#f8fafc', boxWidth: 10, font: { size: 10 } }
                             }
                         }
                     }
                 });
             } else {
-                historyChart.data.labels = labels;
-                historyChart.data.datasets[0].data = gridData;
-                historyChart.data.datasets[1].data = batteryData;
-                historyChart.data.datasets[2].data = currentData;
-                historyChart.update();
+                busLoadChart.data.labels = labels;
+                busLoadChart.data.datasets[0].data = batteryData;
+                busLoadChart.data.datasets[1].data = currentData;
+                busLoadChart.update();
             }
         }
 
@@ -704,6 +742,9 @@
             document.getElementById('grid_voltage').innerText = data.grid_voltage.toFixed(1);
             document.getElementById('load_current').innerText = data.load_current.toFixed(2);
             document.getElementById('battery_voltage').innerText = data.battery_voltage.toFixed(2);
+            if (document.getElementById('battery_voltage_bus')) {
+                document.getElementById('battery_voltage_bus').innerText = data.battery_voltage.toFixed(2);
+            }
             document.getElementById('cell1_voltage').innerText = data.cell1_voltage.toFixed(2);
             document.getElementById('cell2_voltage').innerText = data.cell2_voltage.toFixed(2);
             document.getElementById('uvp_threshold').innerText = data.uvp_threshold.toFixed(2);

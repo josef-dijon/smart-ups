@@ -19,6 +19,11 @@ DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() == "true"
 if not PICO_UPS_URL or PICO_UPS_URL.strip() == "":
     PICO_UPS_URL = None
 
+# Shared telemetry cache for throttling network requests to the Pico
+latest_telemetry = None
+latest_telemetry_time = 0.0
+telemetry_lock = threading.Lock()
+
 def seed_demo_history():
     """Seeds the SQLite database with 100 points of realistic historical cycle data."""
     conn = sqlite3.connect(DB_PATH)
@@ -120,7 +125,11 @@ def start_udp_discovery():
 
 def polling_loop():
     """Background polling loop that pulls telemetry from the Pico and stores it in SQLite."""
-    print("[Backend] Starting background telemetry logger...")
+    global latest_telemetry, latest_telemetry_time
+    print("[Backend] Starting background telemetry logger...", flush=True)
+    
+    last_db_write_time = 0.0
+    
     while True:
         if DEMO_MODE:
             # Generate dynamic telemetry data for SQLite history logging
@@ -147,41 +156,52 @@ def polling_loop():
                 conn.commit()
                 conn.close()
             except Exception as e:
-                print(f"[Backend] Demo poll insert failed: {e}")
-                
+                print(f"[Backend] Demo poll insert failed: {e}", flush=True)
+            
+            time.sleep(10)
+            
         else:
             if not PICO_UPS_URL:
                 time.sleep(2)
                 continue
                 
+            data = None
             try:
                 req = urllib.request.Request(f"{PICO_UPS_URL}/api/status")
-                with urllib.request.urlopen(req, timeout=3) as resp:
+                with urllib.request.urlopen(req, timeout=2.5) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
                 
-                # Extract readings
-                battery_voltage = data.get("battery_voltage", 0.0)
-                grid_voltage = data.get("grid_voltage", 0.0)
-                load_current = data.get("load_current", 0.0)
-                
-                # Save to SQLite
-                conn = sqlite3.connect(DB_PATH)
-                cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?)",
-                    (battery_voltage, grid_voltage, load_current)
-                )
-                # Prune logs older than 24 hours to keep the database size lightweight
-                cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-24 hours')")
-                conn.commit()
-                conn.close()
+                with telemetry_lock:
+                    latest_telemetry = data
+                    latest_telemetry_time = time.time()
                 
             except Exception as e:
                 # Print warnings occasionally but continue running
-                print(f"[Backend] Background poll failed: {e}")
+                print(f"[Backend] Background poll failed: {e}", flush=True)
             
-        # Poll every 10 seconds for historical logs
-        time.sleep(10)
+            # Save to SQLite history every 10 seconds to keep database size lightweight
+            now_time = time.time()
+            if data and (now_time - last_db_write_time >= 10.0):
+                try:
+                    battery_voltage = data.get("battery_voltage", 0.0)
+                    grid_voltage = data.get("grid_voltage", 0.0)
+                    load_current = data.get("load_current", 0.0)
+                    
+                    conn = sqlite3.connect(DB_PATH)
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?)",
+                        (battery_voltage, grid_voltage, load_current)
+                    )
+                    cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-24 hours')")
+                    conn.commit()
+                    conn.close()
+                    last_db_write_time = now_time
+                except Exception as db_err:
+                    print(f"[Backend] Database write failed: {db_err}", flush=True)
+            
+            # Fast polling interval to keep cached data fresh for HTTP requests
+            time.sleep(1.5)
 
 class DashboardHandler(BaseHTTPRequestHandler):
     
@@ -259,19 +279,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": "Smart UPS board not discovered yet. Waiting for UDP beacon..."}).encode('utf-8'))
                 return
-            # Proxy status request to Pico
-            try:
-                req = urllib.request.Request(f"{PICO_UPS_URL}/api/status")
-                with urllib.request.urlopen(req, timeout=3) as resp:
-                    self.send_response(200)
-                    self.send_header('Content-Type', 'application/json')
-                    self.end_headers()
-                    self.wfile.write(resp.read())
-            except Exception as e:
+            
+            # Return cached data if valid (within 6 seconds)
+            with telemetry_lock:
+                cache_valid = (latest_telemetry is not None) and (time.time() - latest_telemetry_time < 6.0)
+                cached_data = latest_telemetry
+
+            if cache_valid:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(cached_data).encode('utf-8'))
+            else:
                 self.send_response(502)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": f"Failed to reach device: {e}"}).encode('utf-8'))
+                time_diff = time.time() - latest_telemetry_time if latest_telemetry else -1
+                self.wfile.write(json.dumps({
+                    "error": "Device offline (cached telemetry expired)",
+                    "last_seen_seconds_ago": time_diff
+                }).encode('utf-8'))
                 
         elif path == "/api/control":
             if DEMO_MODE:
@@ -308,11 +335,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
-                # Select only the last 1440 points (approx 4 hours at 10s intervals, or 24 hours if polled less frequently)
+                # Aggregate readings by minute to return up to 24 hours of data efficiently
                 cursor.execute("""
-                    SELECT strftime('%H:%M:%S', datetime(timestamp, 'localtime')), battery_voltage, grid_voltage, load_current 
+                    SELECT 
+                        strftime('%H:%M', datetime(timestamp, 'localtime')) as min_time,
+                        ROUND(AVG(battery_voltage), 2),
+                        ROUND(AVG(grid_voltage), 1),
+                        ROUND(AVG(load_current), 2)
                     FROM ups_history 
-                    ORDER BY id DESC LIMIT 100
+                    GROUP BY strftime('%Y-%m-%d %H:%M', datetime(timestamp, 'localtime'))
+                    ORDER BY timestamp DESC
+                    LIMIT 1440
                 """)
                 rows = cursor.fetchall()
                 conn.close()
