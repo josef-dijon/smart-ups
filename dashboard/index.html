@@ -329,6 +329,130 @@
             header { flex-direction: column; align-items: flex-start; gap: 1rem; }
             .connection-status { width: 100%; justify-content: space-between; }
         }
+
+        /* Energy Flow Diagram Styling */
+        .flow-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .flow-svg {
+            width: 100%;
+            height: auto;
+            max-height: 280px;
+        }
+
+        .flow-node-bg {
+            fill: #0f172a;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 2;
+            transition: stroke 0.5s, fill 0.5s;
+        }
+
+        .flow-node-bg.active-grid {
+            stroke: var(--primary);
+            fill: rgba(59, 130, 246, 0.08);
+        }
+
+        .flow-node-bg.active-battery {
+            stroke: var(--success);
+            fill: rgba(16, 185, 129, 0.08);
+        }
+
+        .flow-node-bg.discharging-battery {
+            stroke: var(--danger);
+            fill: rgba(239, 68, 68, 0.08);
+        }
+
+        .flow-node-bg.active-load {
+            stroke: var(--warning);
+            fill: rgba(245, 158, 11, 0.08);
+        }
+
+        .flow-pipe {
+            fill: none;
+            stroke: #1e293b;
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke 0.5s;
+        }
+
+        .flow-pipe.active {
+            stroke: #334155;
+        }
+
+        .flow-animation-pipe {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 6 12;
+            pointer-events: none;
+        }
+
+        /* Pipe flow states */
+        .flow-animation-pipe.grid-flow {
+            stroke: #60a5fa;
+            animation: dash-forward 1.2s linear infinite;
+        }
+
+        .flow-animation-pipe.battery-charging {
+            stroke: #34d399;
+            animation: dash-forward 1.5s linear infinite;
+        }
+
+        .flow-animation-pipe.battery-discharging {
+            stroke: #f87171;
+            animation: dash-backward 1.2s linear infinite;
+        }
+
+        .flow-animation-pipe.load-flow {
+            stroke: #fbbf24;
+            animation: dash-forward 1.5s linear infinite;
+        }
+
+        .flow-node-text {
+            fill: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            text-anchor: middle;
+            letter-spacing: 0.05em;
+        }
+
+        .flow-node-val {
+            fill: var(--text);
+            font-size: 13px;
+            font-weight: 700;
+            text-anchor: middle;
+        }
+
+        .flow-node-icon {
+            fill: none;
+            stroke: var(--text-muted);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.5s;
+        }
+
+        .flow-node-icon.active {
+            stroke: white;
+        }
+
+        @keyframes dash-forward {
+            from { stroke-dashoffset: 36; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes dash-backward {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: 36; }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -346,6 +470,76 @@
                 </div>
             </div>
         </header>
+
+        <!-- Power Flow Diagram Card -->
+        <div class="flow-card">
+            <div class="card-title" style="margin-bottom: 0.5rem;">
+                <span>System Energy Flow Diagram</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <svg class="flow-svg" viewBox="0 0 800 280">
+                 <!-- Pipes (conduits) -->
+                 <!-- Grid to LAD Pipe -->
+                 <path id="grid_pipe" class="flow-pipe" d="M 132 120 L 345 120" />
+                 <path id="grid_flow_pipe" class="flow-animation-pipe" d="M 132 120 L 345 120" />
+
+                 <!-- LAD to Load Pipe -->
+                 <path id="load_pipe" class="flow-pipe" d="M 455 120 L 668 120" />
+                 <path id="load_flow_pipe" class="flow-animation-pipe" d="M 455 120 L 668 120" />
+
+                 <!-- LAD to Battery Pipe -->
+                 <path id="battery_pipe" class="flow-pipe" d="M 400 155 L 400 190" />
+                 <path id="battery_flow_pipe" class="flow-animation-pipe" d="M 400 155 L 400 190" />
+
+                 <!-- Nodes (casing backgrounds) -->
+                 <!-- Grid Node -->
+                 <circle id="grid_node" class="flow-node-bg" cx="100" cy="120" r="32" />
+                 
+                 <!-- LAD Node -->
+                 <rect id="lad_node" class="flow-node-bg" x="345" y="85" width="110" height="70" rx="8" ry="8" />
+
+                 <!-- Battery Node -->
+                 <rect id="battery_node" class="flow-node-bg" x="368" y="190" width="64" height="40" rx="6" ry="6" />
+
+                 <!-- Load Node -->
+                 <circle id="load_node" class="flow-node-bg" cx="700" cy="120" r="32" />
+
+                 <!-- Icons -->
+                 <!-- Grid Bolt Icon -->
+                 <g transform="translate(89, 106)">
+                     <path class="flow-node-icon" id="grid_icon" d="M11 1L2 11h8v8l9-10h-8z" />
+                 </g>
+
+                 <!-- LAD convert symbol -->
+                 <g transform="translate(392, 100)">
+                     <path class="flow-node-icon" id="lad_icon" d="M 0 5 Q 4 1, 8 5 T 16 5 M 0 11 L 16 11 M 0 14 L 16 14" />
+                 </g>
+
+                 <!-- Battery Icon -->
+                 <g transform="translate(388, 202)">
+                     <rect class="flow-node-icon" id="battery_icon_outline" x="0" y="2" width="24" height="12" rx="2" ry="2" />
+                     <line class="flow-node-icon" x1="24" y1="6" x2="24" y2="10" />
+                 </g>
+
+                 <!-- Load Fork Icon -->
+                 <g transform="translate(689, 109)">
+                     <path class="flow-node-icon" id="load_icon" d="M 5 3 L 5 11 M 11 3 L 11 11 M 2 7 L 14 7 M 8 11 L 8 18" />
+                 </g>
+
+                 <!-- Labels and Values -->
+                 <text x="100" y="172" class="flow-node-text">GRID INPUT</text>
+                 <text id="flow_grid_voltage" x="100" y="190" class="flow-node-val">--.- V</text>
+
+                 <text x="400" y="145" class="flow-node-text" style="font-size: 10px; opacity: 0.8;">LAD-600BU</text>
+                 <text id="flow_lad_status" x="400" y="125" class="flow-node-text" style="font-size: 9px; fill: var(--text-muted);">OFFLINE</text>
+
+                 <text x="400" y="247" class="flow-node-text">BATTERY STRING</text>
+                 <text id="flow_battery_voltage" x="400" y="265" class="flow-node-val">--.-- V</text>
+
+                 <text x="700" y="172" class="flow-node-text">SYSTEM LOAD</text>
+                 <text id="flow_load_current" x="700" y="190" class="flow-node-val">--.-- A</text>
+            </svg>
+        </div>
 
         <!-- Main Layout Grid -->
 
@@ -829,6 +1023,84 @@
             } else {
                 relayBadge.innerText = "BACKUP ARMED";
                 relayBadge.className = "badge badge-success";
+            }
+
+            // --- Update SVG Energy Flow Diagram ---
+            // 1. Update text values in diagram
+            document.getElementById('flow_grid_voltage').textContent = data.grid_voltage.toFixed(1) + ' V';
+            document.getElementById('flow_battery_voltage').textContent = data.battery_voltage.toFixed(2) + ' V';
+            document.getElementById('flow_load_current').textContent = data.load_current.toFixed(2) + ' A';
+
+            // 2. Node elements references
+            const gridNode = document.getElementById('grid_node');
+            const batteryNode = document.getElementById('battery_node');
+            const loadNode = document.getElementById('load_node');
+            const ladNode = document.getElementById('lad_node');
+            const flowLadStatus = document.getElementById('flow_lad_status');
+
+            // 3. Pipe elements references
+            const gridFlowPipe = document.getElementById('grid_flow_pipe');
+            const batteryFlowPipe = document.getElementById('battery_flow_pipe');
+            const loadFlowPipe = document.getElementById('load_flow_pipe');
+
+            // 4. Update Grid Input Flow
+            if (data.ac_ok) {
+                gridNode.setAttribute('class', 'flow-node-bg active-grid');
+                gridFlowPipe.setAttribute('class', 'flow-animation-pipe grid-flow');
+            } else {
+                gridNode.setAttribute('class', 'flow-node-bg');
+                gridFlowPipe.setAttribute('class', 'flow-animation-pipe');
+            }
+
+            // 5. Update LAD Node & Status
+            if (data.ac_ok) {
+                ladNode.setAttribute('class', 'flow-node-bg active-grid');
+                flowLadStatus.textContent = 'GRID POWER';
+                flowLadStatus.style.fill = '#60a5fa';
+            } else if (!data.bat_sw_off && data.battery_voltage > 18.0) {
+                ladNode.setAttribute('class', 'flow-node-bg discharging-battery');
+                flowLadStatus.textContent = 'BATTERY BACKUP';
+                flowLadStatus.style.fill = '#f87171';
+            } else {
+                ladNode.setAttribute('class', 'flow-node-bg');
+                flowLadStatus.textContent = 'OFFLINE';
+                flowLadStatus.style.fill = 'var(--text-muted)';
+            }
+
+            // 6. Update Battery Flow (Charging / Discharging)
+            if (data.bat_nc) {
+                batteryNode.setAttribute('class', 'flow-node-bg');
+                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe');
+            } else if (data.ac_ok && data.bat_chging) {
+                batteryNode.setAttribute('class', 'flow-node-bg active-battery');
+                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe battery-charging');
+            } else if (!data.ac_ok && !data.bat_sw_off && data.load_current > 0.05) {
+                batteryNode.setAttribute('class', 'flow-node-bg discharging-battery');
+                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe battery-discharging');
+                // Speed up discharging animation if load current is high
+                const batDuration = Math.max(0.4, Math.min(3.0, 3.0 / data.load_current));
+                batteryFlowPipe.style.animationDuration = batDuration + 's';
+            } else {
+                // Standby float / charged / isolated
+                if (data.bat_sw_off) {
+                    batteryNode.setAttribute('class', 'flow-node-bg');
+                } else {
+                    batteryNode.setAttribute('class', 'flow-node-bg active-battery');
+                }
+                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe');
+                batteryFlowPipe.style.animationDuration = '';
+            }
+
+            // 7. Update Load Flow
+            if (data.load_current > 0.05) {
+                loadNode.setAttribute('class', 'flow-node-bg active-load');
+                loadFlowPipe.setAttribute('class', 'flow-animation-pipe load-flow');
+                const loadDuration = Math.max(0.4, Math.min(3.0, 3.0 / data.load_current));
+                loadFlowPipe.style.animationDuration = loadDuration + 's';
+            } else {
+                loadNode.setAttribute('class', 'flow-node-bg');
+                loadFlowPipe.setAttribute('class', 'flow-animation-pipe');
+                loadFlowPipe.style.animationDuration = '';
             }
         }
 
