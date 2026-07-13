@@ -355,8 +355,13 @@
         }
 
         .flow-node-bg.active-grid {
-            stroke: var(--primary);
-            fill: rgba(59, 130, 246, 0.08);
+            stroke: var(--success);
+            fill: rgba(16, 185, 129, 0.08);
+        }
+
+        .flow-node-bg.offline-grid {
+            stroke: var(--danger);
+            fill: rgba(239, 68, 68, 0.08);
         }
 
         .flow-node-bg.active-battery {
@@ -585,11 +590,12 @@
                  <text id="flow_lad_model" x="400" y="145" class="flow-node-text" style="font-size: 10px; opacity: 0.8;">LAD-600BU</text>
                  <text id="flow_lad_status" x="400" y="125" class="flow-node-text" style="font-size: 9px; fill: var(--text-muted);">OFFLINE</text>
 
-                 <!-- Total string voltage label at the very bottom center -->
-                 <text x="400" y="275" class="flow-node-text" style="font-size: 10px; font-weight: 700; fill: var(--text-muted);">TOTAL: <tspan id="flow_battery_voltage" style="fill: var(--text); font-weight: 800;">--.-- V</tspan></text>
+                 <!-- Load current under the horizontal load pipe -->
+                 <text x="560" y="145" class="flow-node-text" style="font-size: 10px; font-weight: 700; fill: var(--text-muted);">LOAD: <tspan id="flow_load_current" style="fill: var(--text); font-weight: 800;">--.-- A</tspan></text>
 
-                 <text x="700" y="172" class="flow-node-text">SYSTEM LOAD</text>
-                 <text id="flow_load_current" x="700" y="190" class="flow-node-val">--.-- A</text>
+                 <!-- Battery voltage under the DC Bus / Load Node -->
+                 <text x="700" y="172" class="flow-node-text">DC BUS VOLTAGE</text>
+                 <text id="flow_battery_voltage" x="700" y="190" class="flow-node-val">--.-- V</text>
             </svg>
         </div>
 
@@ -1184,15 +1190,18 @@
                 }
             }
 
-            // 6. Update Grid Input Flow
+            // 6. Update Grid Input Flow & Icon Color
             const gridNode = document.getElementById('grid_node');
             const gridFlowPipe = document.getElementById('grid_flow_pipe');
+            const gridIcon = document.getElementById('grid_icon');
             if (data.ac_ok) {
                 gridNode.setAttribute('class', 'flow-node-bg active-grid');
                 gridFlowPipe.setAttribute('class', 'flow-animation-pipe grid-flow');
+                if (gridIcon) gridIcon.style.stroke = 'var(--success)';
             } else {
-                gridNode.setAttribute('class', 'flow-node-bg');
+                gridNode.setAttribute('class', 'flow-node-bg offline-grid');
                 gridFlowPipe.setAttribute('class', 'flow-animation-pipe');
+                if (gridIcon) gridIcon.style.stroke = 'var(--danger)';
             }
 
             // 7. Update LAD Node & Status
