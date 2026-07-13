@@ -823,6 +823,19 @@
             const gridData = data.map(item => item.grid_voltage);
             const currentData = data.map(item => item.load_current);
 
+            // Determine max voltage scaling dynamically based on system voltage
+            const peakVoltage = batteryData.length > 0 ? Math.max(...batteryData) : 26.8;
+            let maxVoltageScale = 30;
+            if (peakVoltage > 45) {
+                maxVoltageScale = 60;
+            } else if (peakVoltage > 32) {
+                maxVoltageScale = 45;
+            } else if (peakVoltage > 15) {
+                maxVoltageScale = 30;
+            } else {
+                maxVoltageScale = 18;
+            }
+
             // 1. Grid Chart
             if (!gridChart) {
                 const ctx = document.getElementById('gridChart').getContext('2d');
@@ -893,8 +906,8 @@
                         scales: {
                             y: {
                                 type: 'linear',
-                                min: 18,
-                                max: 30,
+                                min: 0,
+                                max: maxVoltageScale,
                                 title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                                 ticks: { color: '#94a3b8' }
@@ -910,6 +923,7 @@
             } else {
                 batteryChart.data.labels = labels;
                 batteryChart.data.datasets[0].data = batteryData;
+                batteryChart.options.scales.y.max = maxVoltageScale;
                 batteryChart.update();
             }
 
@@ -941,7 +955,8 @@
                                 tension: 0.2,
                                 fill: false,
                                 borderWidth: 1.5,
-                                pointRadius: 0.5
+                                pointRadius: 0.5,
+                                borderDash: [5, 5]
                             }
                         ]
                     },
@@ -953,8 +968,8 @@
                             'y-voltage': {
                                 type: 'linear',
                                 position: 'left',
-                                min: 18,
-                                max: 30,
+                                min: 0,
+                                max: maxVoltageScale,
                                 title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                                 ticks: { color: '#94a3b8' }
@@ -985,6 +1000,7 @@
                 busLoadChart.data.labels = labels;
                 busLoadChart.data.datasets[0].data = batteryData;
                 busLoadChart.data.datasets[1].data = currentData;
+                busLoadChart.options.scales['y-voltage'].max = maxVoltageScale;
                 busLoadChart.update();
             }
         }
