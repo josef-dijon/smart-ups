@@ -529,7 +529,7 @@
                 <span>System Energy Flow Diagram</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             </div>
-            <svg class="flow-svg" viewBox="0 0 800 280">
+             <svg class="flow-svg" viewBox="0 0 860 280">
                  <!-- Pipes (conduits) -->
                  <!-- Grid to LAD Pipe -->
                  <path id="grid_pipe" class="flow-pipe" d="M 132 120 L 345 120" />
@@ -626,18 +626,21 @@
                      <text id="flow_cell4_voltage" x="0" y="259" class="flow-node-val" style="font-size: 11px;">--.-- V</text>
                  </g>
 
-                 <!-- Clickable DC Bus / Load Output Group -->
-                 <g onclick="scrollToChart('card_bus_chart')">
-                     <!-- Load Node -->
-                     <circle id="load_node" class="flow-node-bg" cx="700" cy="120" r="32" />
-                     <!-- Load Fork Icon -->
-                     <g transform="translate(689, 109)">
-                         <path class="flow-node-icon" id="load_icon" d="M 5 3 L 5 11 M 11 3 L 11 11 M 2 7 L 14 7 M 8 11 L 8 18" />
-                     </g>
-                     <!-- DC Bus / Load Labels -->
-                     <text x="700" y="172" class="flow-node-text">DC BUS VOLTAGE</text>
-                     <text id="flow_battery_voltage" x="700" y="190" class="flow-node-val">--.-- V</text>
-                 </g>
+                  <!-- Clickable DC Bus / Load Output Group -->
+                  <g onclick="scrollToChart('card_bus_chart')">
+                      <!-- Load Node -->
+                      <circle id="load_node" class="flow-node-bg" cx="700" cy="120" r="32" />
+                      <!-- Load Fork Icon -->
+                      <g transform="translate(689, 109)">
+                          <path class="flow-node-icon" id="load_icon" d="M 5 3 L 5 11 M 11 3 L 11 11 M 2 7 L 14 7 M 8 11 L 8 18" />
+                      </g>
+                      <!-- DC Bus / Load Labels -->
+                      <text x="700" y="172" class="flow-node-text">DC BUS VOLTAGE</text>
+                      <text id="flow_battery_voltage" x="700" y="190" class="flow-node-val">--.-- V</text>
+                      <!-- Output Power label next to load node -->
+                      <text x="745" y="112" class="flow-node-text" style="text-anchor: start; font-size: 9px; font-weight: 700; fill: var(--text-muted);">OUT POWER</text>
+                      <text id="flow_output_power" x="745" y="132" class="flow-node-val" style="text-anchor: start; font-size: 15px; font-weight: 800; fill: var(--primary);">--.- W</text>
+                  </g>
 
                  <!-- Load current under the horizontal load pipe -->
                  <text x="560" y="145" class="flow-node-text" style="font-size: 10px; font-weight: 700; fill: var(--text-muted); cursor: pointer;" onclick="scrollToChart('card_bus_chart')">LOAD: <tspan id="flow_load_current" style="fill: var(--text); font-weight: 800;">--.-- A</tspan></text>
@@ -1314,7 +1317,7 @@
             }
         }
 
-               function updateUI(data) {
+        function updateUI(data) {
             // Voltages & Currents
             if (document.getElementById('grid_voltage')) {
                 document.getElementById('grid_voltage').innerText = data.grid_voltage.toFixed(1);
@@ -1330,6 +1333,13 @@
             }
             if (document.getElementById('uvp_threshold')) {
                 document.getElementById('uvp_threshold').innerText = data.uvp_threshold.toFixed(2);
+            }
+            
+            // Calculate and display output power (V_bus * I_load)
+            const outputPower = data.battery_voltage * data.load_current;
+            const flowOutputPower = document.getElementById('flow_output_power');
+            if (flowOutputPower) {
+                flowOutputPower.textContent = outputPower.toFixed(1) + ' W';
             }
 
             // AC Status
