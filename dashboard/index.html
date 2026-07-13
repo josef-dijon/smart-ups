@@ -487,9 +487,15 @@
                  <path id="load_pipe" class="flow-pipe" d="M 455 120 L 668 120" />
                  <path id="load_flow_pipe" class="flow-animation-pipe" d="M 455 120 L 668 120" />
 
-                 <!-- LAD to Battery Pipe -->
-                 <path id="battery_pipe" class="flow-pipe" d="M 400 155 L 400 190" />
-                 <path id="battery_flow_pipe" class="flow-animation-pipe" d="M 400 155 L 400 190" />
+                 <!-- LAD to Battery branched pipes -->
+                 <path id="battery_pipe_left" class="flow-pipe" d="M 400 155 L 400 172 L 360 172 L 360 190" />
+                 <path id="battery_flow_pipe_left" class="flow-animation-pipe" d="M 400 155 L 400 172 L 360 172 L 360 190" />
+
+                 <path id="battery_pipe_right" class="flow-pipe" d="M 400 172 L 440 172 L 440 190" />
+                 <path id="battery_flow_pipe_right" class="flow-animation-pipe" d="M 400 155 L 400 172 L 440 172 L 440 190" />
+
+                 <!-- Series Link line between cells -->
+                 <path d="M 395 211 L 405 211" stroke="rgba(255, 255, 255, 0.2)" stroke-width="3" stroke-dasharray="2 2" />
 
                  <!-- Nodes (casing backgrounds) -->
                  <!-- Grid Node -->
@@ -498,8 +504,11 @@
                  <!-- LAD Node -->
                  <rect id="lad_node" class="flow-node-bg" x="345" y="85" width="110" height="70" rx="8" ry="8" />
 
-                 <!-- Battery Node -->
-                 <rect id="battery_node" class="flow-node-bg" x="368" y="190" width="64" height="40" rx="6" ry="6" />
+                 <!-- Cell 1 Node -->
+                 <rect id="cell1_node" class="flow-node-bg" x="325" y="190" width="70" height="42" rx="4" ry="4" />
+
+                 <!-- Cell 2 Node -->
+                 <rect id="cell2_node" class="flow-node-bg" x="405" y="190" width="70" height="42" rx="4" ry="4" />
 
                  <!-- Load Node -->
                  <circle id="load_node" class="flow-node-bg" cx="700" cy="120" r="32" />
@@ -515,10 +524,16 @@
                      <path class="flow-node-icon" id="lad_icon" d="M 0 5 Q 4 1, 8 5 T 16 5 M 0 11 L 16 11 M 0 14 L 16 14" />
                  </g>
 
-                 <!-- Battery Icon -->
-                 <g transform="translate(388, 202)">
-                     <rect class="flow-node-icon" id="battery_icon_outline" x="0" y="2" width="24" height="12" rx="2" ry="2" />
-                     <line class="flow-node-icon" x1="24" y1="6" x2="24" y2="10" />
+                 <!-- Cell 1 Battery Icon -->
+                 <g transform="translate(348, 198)">
+                     <rect class="flow-node-icon" x="0" y="2" width="20" height="10" rx="1.5" ry="1.5" style="stroke-width: 1.5;" />
+                     <line class="flow-node-icon" x1="20" y1="5" x2="20" y2="9" style="stroke-width: 1.5;" />
+                 </g>
+
+                 <!-- Cell 2 Battery Icon -->
+                 <g transform="translate(428, 198)">
+                     <rect class="flow-node-icon" x="0" y="2" width="20" height="10" rx="1.5" ry="1.5" style="stroke-width: 1.5;" />
+                     <line class="flow-node-icon" x1="20" y1="5" x2="20" y2="9" style="stroke-width: 1.5;" />
                  </g>
 
                  <!-- Load Fork Icon -->
@@ -533,8 +548,16 @@
                  <text x="400" y="145" class="flow-node-text" style="font-size: 10px; opacity: 0.8;">LAD-600BU</text>
                  <text id="flow_lad_status" x="400" y="125" class="flow-node-text" style="font-size: 9px; fill: var(--text-muted);">OFFLINE</text>
 
-                 <text x="400" y="247" class="flow-node-text">BATTERY STRING</text>
-                 <text id="flow_battery_voltage" x="400" y="265" class="flow-node-val">--.-- V</text>
+                 <!-- Cell 1 Labels -->
+                 <text x="360" y="246" class="flow-node-text" style="font-size: 9px;">CELL 1</text>
+                 <text id="flow_cell1_voltage" x="360" y="259" class="flow-node-val" style="font-size: 11px;">--.-- V</text>
+
+                 <!-- Cell 2 Labels -->
+                 <text x="440" y="246" class="flow-node-text" style="font-size: 9px;">CELL 2</text>
+                 <text id="flow_cell2_voltage" x="440" y="259" class="flow-node-val" style="font-size: 11px;">--.-- V</text>
+
+                 <!-- Total string voltage label at the very bottom center -->
+                 <text x="400" y="275" class="flow-node-text" style="font-size: 10px; font-weight: 700; fill: var(--text-muted);">TOTAL: <tspan id="flow_battery_voltage" style="fill: var(--text); font-weight: 800;">--.-- V</tspan></text>
 
                  <text x="700" y="172" class="flow-node-text">SYSTEM LOAD</text>
                  <text id="flow_load_current" x="700" y="190" class="flow-node-val">--.-- A</text>
@@ -1029,18 +1052,22 @@
             // 1. Update text values in diagram
             document.getElementById('flow_grid_voltage').textContent = data.grid_voltage.toFixed(1) + ' V';
             document.getElementById('flow_battery_voltage').textContent = data.battery_voltage.toFixed(2) + ' V';
+            document.getElementById('flow_cell1_voltage').textContent = data.cell1_voltage.toFixed(2) + ' V';
+            document.getElementById('flow_cell2_voltage').textContent = data.cell2_voltage.toFixed(2) + ' V';
             document.getElementById('flow_load_current').textContent = data.load_current.toFixed(2) + ' A';
 
             // 2. Node elements references
             const gridNode = document.getElementById('grid_node');
-            const batteryNode = document.getElementById('battery_node');
+            const cell1Node = document.getElementById('cell1_node');
+            const cell2Node = document.getElementById('cell2_node');
             const loadNode = document.getElementById('load_node');
             const ladNode = document.getElementById('lad_node');
             const flowLadStatus = document.getElementById('flow_lad_status');
 
             // 3. Pipe elements references
             const gridFlowPipe = document.getElementById('grid_flow_pipe');
-            const batteryFlowPipe = document.getElementById('battery_flow_pipe');
+            const batteryFlowPipeLeft = document.getElementById('battery_flow_pipe_left');
+            const batteryFlowPipeRight = document.getElementById('battery_flow_pipe_right');
             const loadFlowPipe = document.getElementById('load_flow_pipe');
 
             // 4. Update Grid Input Flow
@@ -1069,26 +1096,37 @@
 
             // 6. Update Battery Flow (Charging / Discharging)
             if (data.bat_nc) {
-                batteryNode.setAttribute('class', 'flow-node-bg');
-                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe');
+                cell1Node.setAttribute('class', 'flow-node-bg');
+                cell2Node.setAttribute('class', 'flow-node-bg');
+                batteryFlowPipeLeft.setAttribute('class', 'flow-animation-pipe');
+                batteryFlowPipeRight.setAttribute('class', 'flow-animation-pipe');
             } else if (data.ac_ok && data.bat_chging) {
-                batteryNode.setAttribute('class', 'flow-node-bg active-battery');
-                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe battery-charging');
+                cell1Node.setAttribute('class', 'flow-node-bg active-battery');
+                cell2Node.setAttribute('class', 'flow-node-bg active-battery');
+                batteryFlowPipeLeft.setAttribute('class', 'flow-animation-pipe battery-charging');
+                batteryFlowPipeRight.setAttribute('class', 'flow-animation-pipe battery-charging');
             } else if (!data.ac_ok && !data.bat_sw_off && data.load_current > 0.05) {
-                batteryNode.setAttribute('class', 'flow-node-bg discharging-battery');
-                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe battery-discharging');
+                cell1Node.setAttribute('class', 'flow-node-bg discharging-battery');
+                cell2Node.setAttribute('class', 'flow-node-bg discharging-battery');
+                batteryFlowPipeLeft.setAttribute('class', 'flow-animation-pipe battery-discharging');
+                batteryFlowPipeRight.setAttribute('class', 'flow-animation-pipe battery-discharging');
                 // Speed up discharging animation if load current is high
                 const batDuration = Math.max(0.4, Math.min(3.0, 3.0 / data.load_current));
-                batteryFlowPipe.style.animationDuration = batDuration + 's';
+                batteryFlowPipeLeft.style.animationDuration = batDuration + 's';
+                batteryFlowPipeRight.style.animationDuration = batDuration + 's';
             } else {
                 // Standby float / charged / isolated
                 if (data.bat_sw_off) {
-                    batteryNode.setAttribute('class', 'flow-node-bg');
+                    cell1Node.setAttribute('class', 'flow-node-bg');
+                    cell2Node.setAttribute('class', 'flow-node-bg');
                 } else {
-                    batteryNode.setAttribute('class', 'flow-node-bg active-battery');
+                    cell1Node.setAttribute('class', 'flow-node-bg active-battery');
+                    cell2Node.setAttribute('class', 'flow-node-bg active-battery');
                 }
-                batteryFlowPipe.setAttribute('class', 'flow-animation-pipe');
-                batteryFlowPipe.style.animationDuration = '';
+                batteryFlowPipeLeft.setAttribute('class', 'flow-animation-pipe');
+                batteryFlowPipeRight.setAttribute('class', 'flow-animation-pipe');
+                batteryFlowPipeLeft.style.animationDuration = '';
+                batteryFlowPipeRight.style.animationDuration = '';
             }
 
             // 7. Update Load Flow
