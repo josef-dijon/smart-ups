@@ -30,6 +30,8 @@ telemetry = {
     "battery_voltage": 26.8,
     "cell1_voltage": 13.38,
     "cell2_voltage": 13.42,
+    "cell3_voltage": 0.0,
+    "cell4_voltage": 0.0,
     "uvp_threshold": 21.5
 }
 

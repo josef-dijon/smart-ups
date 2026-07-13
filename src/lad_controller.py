@@ -50,6 +50,8 @@ class LADController:
             "battery_voltage": 0.0,    # V (0x0040 Read, scale 0.01V)
             "cell1_voltage": 0.0,      # V (0x0050 index 0-1, scale 0.01V)
             "cell2_voltage": 0.0,      # V (0x0050 index 2-3, scale 0.01V)
+            "cell3_voltage": 0.0,      # V (0x0050 index 4-5, scale 0.01V)
+            "cell4_voltage": 0.0,      # V (0x0050 index 6-7, scale 0.01V)
             "uvp_threshold": 0.0,      # V (0x0060 Read, scale 0.01V)
             
             "last_update": 0
@@ -178,11 +180,13 @@ class LADController:
                 self.telemetry["battery_voltage"] = ((bat_data[0] << 8) | bat_data[1]) / 100.0
 
             # 5. Read cell voltages (0x0050)
-            # Unpack only indices 0-1 (Battery 1) and 2-3 (Battery 2) from 8-byte array
+            # Unpack indices 0-1 (Cell 1), 2-3 (Cell 2), 4-5 (Cell 3), and 6-7 (Cell 4) from 8-byte array
             cell_data = await self.send_command(0x55, 0x0050)
             if len(cell_data) >= 8:
                 self.telemetry["cell1_voltage"] = ((cell_data[0] << 8) | cell_data[1]) / 100.0
                 self.telemetry["cell2_voltage"] = ((cell_data[2] << 8) | cell_data[3]) / 100.0
+                self.telemetry["cell3_voltage"] = ((cell_data[4] << 8) | cell_data[5]) / 100.0
+                self.telemetry["cell4_voltage"] = ((cell_data[6] << 8) | cell_data[7]) / 100.0
 
             # 6. Read hardware UVP threshold limit (0x0060)
             uvp_data = await self.send_command(0x55, 0x0060)
