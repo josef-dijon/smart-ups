@@ -647,9 +647,13 @@
             </svg>
         </div>
 
-        <!-- History Charts Section -->
-        <!-- Time Range Selection Controls -->
-        <div class="card" style="margin-top: 1.5rem; padding: 1.25rem;">
+        <!-- History Charts Section (Combined Panel) -->
+        <div class="card" id="history_analytics_panel" style="margin-top: 1.5rem; padding: 1.25rem;">
+            <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+                <span>System History & Analytics Console</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+
             <!-- Line 1: Date Selectors -->
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; width: 100%; margin-bottom: 1rem;">
                 <!-- Left: Start Time Widget -->
@@ -675,42 +679,46 @@
             </div>
 
             <!-- Line 3: Download & Action Buttons -->
-            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; width: 100%;">
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; width: 100%; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.25rem;">
                 <button class="btn btn-preset" onclick="downloadRange()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 1rem; border-color: rgba(59, 130, 246, 0.4); color: #60a5fa; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download Range</button>
                 <button class="btn btn-preset" onclick="downloadAll()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 1rem; border-color: rgba(16, 185, 129, 0.4); color: #34d399; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download All</button>
                 <button class="btn btn-preset" onclick="showClearHistoryModal()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 1rem; border-color: rgba(239, 68, 68, 0.4); color: #f87171; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-4M10 11v6M14 11v6"/></svg>Clear History</button>
             </div>
+
+            <!-- Graph 1: Grid Input Voltage -->
+            <div id="card_grid_chart" style="margin-bottom: 2rem; border-radius: 6px; padding: 0.5rem; border: 1px solid transparent;">
+                <div style="font-size: 0.9rem; font-weight: 600; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    <span>Grid Input Voltage History</span>
+                </div>
+                <div style="position: relative; height: 180px; width: 100%;">
+                    <canvas id="gridChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Graph 2: Battery String Voltage -->
+            <div id="card_battery_chart" style="margin-bottom: 2rem; border-radius: 6px; padding: 0.5rem; border: 1px solid transparent;">
+                <div style="font-size: 0.9rem; font-weight: 600; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="2" y="7" width="16" height="12" rx="2" ry="2"/><line x1="6" y1="11" x2="10" y2="11"/><line x1="6" y1="15" x2="12" y2="15"/><line x1="22" y1="11" x2="22" y2="15"/></svg>
+                    <span>Battery String Voltage & Cell History</span>
+                </div>
+                <div style="position: relative; height: 180px; width: 100%;">
+                    <canvas id="batteryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Graph 3: DC Bus & Load Performance -->
+            <div id="card_bus_chart" style="border-radius: 6px; padding: 0.5rem; border: 1px solid transparent;">
+                <div style="font-size: 0.9rem; font-weight: 600; color: #f8fafc; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    <span>DC Bus & Load Performance History</span>
+                </div>
+                <div style="position: relative; height: 220px; width: 100%;">
+                    <canvas id="busLoadChart"></canvas>
+                </div>
+            </div>
         </div>
 
-        <div class="card" id="card_grid_chart" style="margin-top: 1.5rem;">
-            <div class="card-title">
-                <span>Grid Input Voltage History</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            </div>
-            <div style="position: relative; height: 180px; width: 100%;">
-                <canvas id="gridChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card" id="card_battery_chart" style="margin-top: 1.5rem;">
-            <div class="card-title">
-                <span>Battery String Voltage History</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="12" rx="2" ry="2"/><line x1="6" y1="11" x2="10" y2="11"/><line x1="6" y1="15" x2="12" y2="15"/><line x1="22" y1="11" x2="22" y2="15"/></svg>
-            </div>
-            <div style="position: relative; height: 180px; width: 100%;">
-                <canvas id="batteryChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card" id="card_bus_chart" style="margin-top: 1.5rem;">
-            <div class="card-title">
-                <span>DC Bus & Load Performance History</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            </div>
-            <div style="position: relative; height: 220px; width: 100%;">
-                <canvas id="busLoadChart"></canvas>
-            </div>
-        </div>
 
         <!-- Settings Panel -->
         <div class="card" style="margin-top: 2rem;">
