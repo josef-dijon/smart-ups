@@ -790,46 +790,46 @@
 
         async function fetchHistory() {
             try {
-                let startISO = '';
-                let endISO = '';
+                let startUTC = '';
+                let endUTC = '';
                 
                 if (customTimeActive) {
-                    startISO = document.getElementById('time_start').value;
-                    endISO = document.getElementById('time_end').value;
+                    const localStart = new Date(document.getElementById('time_start').value);
+                    const localEnd = new Date(document.getElementById('time_end').value);
+                    startUTC = localStart.toISOString();
+                    endUTC = localEnd.toISOString();
                 } else {
                     const dates = getRangeDates(activePresetRange);
+                    startUTC = dates.start.toISOString();
+                    endUTC = dates.end.toISOString();
                     
-                    const toLocalISO = (d) => {
+                    const toLocalISO16 = (d) => {
                         const pad = (num) => String(num).padStart(2, '0');
                         return d.getFullYear() +
                             '-' + pad(d.getMonth() + 1) +
                             '-' + pad(d.getDate()) +
                             'T' + pad(d.getHours()) +
-                            ':' + pad(d.getMinutes()) +
-                            ':' + pad(d.getSeconds());
+                            ':' + pad(d.getMinutes());
                     };
                     
-                    startISO = toLocalISO(dates.start);
-                    endISO = toLocalISO(dates.end);
-                    
-                    document.getElementById('time_start').value = startISO.substring(0, 16);
-                    document.getElementById('time_end').value = endISO.substring(0, 16);
+                    document.getElementById('time_start').value = toLocalISO16(dates.start);
+                    document.getElementById('time_end').value = toLocalISO16(dates.end);
                 }
 
-                const res = await fetch(`/api/history?start=${encodeURIComponent(startISO)}&end=${encodeURIComponent(endISO)}`);
+                const res = await fetch(`/api/history?start=${encodeURIComponent(startUTC)}&end=${encodeURIComponent(endUTC)}`);
                 if (!res.ok) throw new Error("History API responded with error");
                 const dbData = await res.json();
                 
                 let processedData;
                 if (activePresetRange === '10m' && !customTimeActive) {
                     processedData = dbData.map(item => ({
-                        time: formatDateLabel(new Date(item.time.replace(' ', 'T')), 'HH:mm:ss'),
+                        time: formatDateLabel(new Date(item.time.replace(' ', 'T') + 'Z'), 'HH:mm:ss'),
                         battery_voltage: item.battery_voltage,
                         grid_voltage: item.grid_voltage,
                         load_current: item.load_current
                     }));
                 } else {
-                    processedData = alignHistoryData(dbData, new Date(startISO), new Date(endISO));
+                    processedData = alignHistoryData(dbData, new Date(startUTC), new Date(endUTC));
                 }
 
                 const maxPoints = 500;
@@ -929,7 +929,7 @@
 
             const serverDataMap = new Map();
             dbData.forEach(item => {
-                const itemDate = new Date(item.time.replace(' ', 'T'));
+                const itemDate = new Date(item.time.replace(' ', 'T') + 'Z');
                 if (!isNaN(itemDate.getTime())) {
                     const roundedTime = Math.round(itemDate.getTime() / stepMs) * stepMs;
                     serverDataMap.set(roundedTime, item);

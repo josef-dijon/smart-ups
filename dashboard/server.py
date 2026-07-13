@@ -66,7 +66,7 @@ def seed_demo_history():
             bat_v = round(25.0 - (discharge_elapsed * 0.002), 2)
             load_c = round(3.5 + random.uniform(-0.1, 0.1), 2)
             
-        timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(pt))
+        timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(pt))
         cursor.execute(
             "INSERT INTO ups_history (timestamp, battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?, ?)",
             (timestamp_str, bat_v, grid_v, load_c)
@@ -370,20 +370,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             pass
 
                 duration_sec = (e_dt - s_dt).total_seconds()
-
-                # Pick standard downsampling group interval based on duration
+                # Pick standard downsampling group interval based on duration (UTC timestamp)
                 if duration_sec <= 600: # 10 mins
-                    group_expr = "strftime('%Y-%m-%d %H:%M:%S', datetime(timestamp, 'localtime'))"
+                    group_expr = "strftime('%Y-%m-%d %H:%M:%S', timestamp)"
                 elif duration_sec <= 3600 * 2: # 2 hours
-                    group_expr = "strftime('%Y-%m-%d %H:%M:', datetime(timestamp, 'localtime')) || (strftime('%S', datetime(timestamp, 'localtime')) / 10 * 10)"
+                    group_expr = "strftime('%Y-%m-%d %H:%M:', timestamp) || (strftime('%S', timestamp) / 10 * 10)"
                 elif duration_sec <= 3600 * 12: # 12 hours
-                    group_expr = "strftime('%Y-%m-%d %H:%M', datetime(timestamp, 'localtime'))"
+                    group_expr = "strftime('%Y-%m-%d %H:%M', timestamp)"
                 elif duration_sec <= 86400 * 3: # 3 days
-                    group_expr = "strftime('%Y-%m-%d %H:', datetime(timestamp, 'localtime')) || (strftime('%M', datetime(timestamp, 'localtime')) / 5 * 5)"
+                    group_expr = "strftime('%Y-%m-%d %H:', timestamp) || (strftime('%M', timestamp) / 5 * 5)"
                 elif duration_sec <= 86400 * 10: # 10 days
-                    group_expr = "strftime('%Y-%m-%d %H:', datetime(timestamp, 'localtime')) || (strftime('%M', datetime(timestamp, 'localtime')) / 30 * 30)"
+                    group_expr = "strftime('%Y-%m-%d %H:', timestamp) || (strftime('%M', timestamp) / 30 * 30)"
                 else: # Up to 30 days
-                    group_expr = "strftime('%Y-%m-%d %H:00', datetime(timestamp, 'localtime'))"
+                    group_expr = "strftime('%Y-%m-%d %H:00', timestamp)"
 
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
@@ -394,7 +393,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         ROUND(MIN(grid_voltage), 1),
                         ROUND(AVG(load_current), 2)
                     FROM ups_history 
-                    WHERE datetime(timestamp, 'localtime') BETWEEN ? AND ?
+                    WHERE timestamp BETWEEN ? AND ?
                     GROUP BY t_time
                     ORDER BY t_time ASC
                 """
