@@ -979,21 +979,21 @@
 
         function getAutoRange(dataArray, unitOffset = 1.0) {
             if (!dataArray || dataArray.length === 0) {
-                return { min: 0, max: unitOffset * 2 };
+                return { min: 0, max: Math.ceil(unitOffset * 2) };
             }
             const minVal = Math.min(...dataArray);
             const maxVal = Math.max(...dataArray);
             
-            let minRange = minVal - unitOffset;
-            let maxRange = maxVal + unitOffset;
+            let minRange = Math.floor(minVal - unitOffset);
+            let maxRange = Math.ceil(maxVal + unitOffset);
             
             // Prevent negative ranges
             if (minRange < 0) minRange = 0;
             
             // Ensure there is some range difference if data is flat
             if (minRange === maxRange) {
-                minRange = Math.max(0, minVal - unitOffset);
-                maxRange = maxVal + unitOffset;
+                minRange = Math.max(0, Math.floor(minVal - unitOffset));
+                maxRange = Math.ceil(maxVal + unitOffset);
             }
             
             return { min: minRange, max: maxRange };
@@ -1021,7 +1021,7 @@
                             data: gridData,
                             borderColor: '#3b82f6',
                             backgroundColor: 'rgba(59, 130, 246, 0.01)',
-                            tension: 0,
+                            tension: 0.1,
                             fill: false,
                             borderWidth: 1.5,
                             pointRadius: 0.5
@@ -1068,7 +1068,7 @@
                             data: batteryData,
                             borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.01)',
-                            tension: 0,
+                            tension: 0.1,
                             fill: false,
                             borderWidth: 1.5,
                             pointRadius: 0.5
@@ -1117,7 +1117,7 @@
                                 borderColor: '#10b981',
                                 backgroundColor: 'rgba(16, 185, 129, 0.01)',
                                 yAxisID: 'y-voltage',
-                                tension: 0,
+                                tension: 0.1,
                                 fill: false,
                                 borderWidth: 1.5,
                                 pointRadius: 0.5
@@ -1128,7 +1128,7 @@
                                 borderColor: '#f59e0b',
                                 backgroundColor: 'rgba(245, 158, 11, 0.01)',
                                 yAxisID: 'y-current',
-                                tension: 0,
+                                tension: 0.1,
                                 fill: false,
                                 borderWidth: 1.5,
                                 pointRadius: 0.5
