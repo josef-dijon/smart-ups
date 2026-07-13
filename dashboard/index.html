@@ -931,8 +931,7 @@
             dbData.forEach(item => {
                 const itemDate = new Date(item.time.replace(' ', 'T') + 'Z');
                 if (!isNaN(itemDate.getTime())) {
-                    const roundedTime = Math.round(itemDate.getTime() / stepMs) * stepMs;
-                    serverDataMap.set(roundedTime, item);
+                    serverDataMap.set(itemDate.getTime(), item);
                 }
             });
 
@@ -944,16 +943,19 @@
                 const stepDate = new Date(t);
                 const label = formatDateLabel(stepDate, timeFormat);
                 
-                let matchedItem = serverDataMap.get(t);
-                if (!matchedItem) {
-                    let minDiff = Infinity;
-                    for (let [srvTime, srvItem] of serverDataMap.entries()) {
-                        const diff = Math.abs(srvTime - t);
-                        if (diff < minDiff && diff < stepMs * 0.8) {
-                            minDiff = diff;
-                            matchedItem = srvItem;
-                        }
+                let matchedItem = null;
+                let minDiff = Infinity;
+                for (let [srvTime, srvItem] of serverDataMap.entries()) {
+                    const diff = Math.abs(srvTime - t);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        matchedItem = srvItem;
                     }
+                }
+                
+                const tolerance = Math.max(stepMs * 1.5, 30000);
+                if (matchedItem && minDiff >= tolerance) {
+                    matchedItem = null;
                 }
                 
                 if (matchedItem) {
