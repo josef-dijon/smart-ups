@@ -67,9 +67,11 @@ def seed_demo_history():
             load_c = round(3.5 + random.uniform(-0.1, 0.1), 2)
             
         timestamp_str = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(pt))
+        c1 = round(bat_v / 2.0 + random.uniform(-0.01, 0.01), 2)
+        c2 = round(bat_v - c1, 2)
         cursor.execute(
-            "INSERT INTO ups_history (timestamp, battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?, ?)",
-            (timestamp_str, bat_v, grid_v, load_c)
+            "INSERT INTO ups_history (timestamp, battery_voltage, grid_voltage, load_current, cell1_voltage, cell2_voltage, cell3_voltage, cell4_voltage) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (timestamp_str, bat_v, grid_v, load_c, c1, c2, None, None)
         )
         
     conn.commit()
@@ -82,7 +84,7 @@ if db_dir:
     os.makedirs(db_dir, exist_ok=True)
 
 def init_db():
-    """Initializes the SQLite schema."""
+    """Initializes the SQLite schema and migrates columns if necessary."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -94,9 +96,19 @@ def init_db():
             load_current REAL
         )
     """)
+    
+    # Check if cell voltage columns exist, if not, add them
+    cursor.execute("PRAGMA table_info(ups_history)")
+    columns = [col[1] for col in cursor.fetchall()]
+    for i in range(1, 5):
+        col_name = f"cell{i}_voltage"
+        if col_name not in columns:
+            cursor.execute(f"ALTER TABLE ups_history ADD COLUMN {col_name} REAL")
+            print(f"[Backend] Migrated: added {col_name} to ups_history", flush=True)
+            
     conn.commit()
     conn.close()
-    print(f"[Backend] Database initialized at: {DB_PATH}")
+    print(f"[Backend] Database initialized at: {DB_PATH}", flush=True)
 
 def start_udp_discovery():
     """Listens for UDP broadcast beacons from the Pico board to auto-discover its IP address."""
@@ -153,9 +165,11 @@ def polling_loop():
             try:
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
+                cell1 = round(battery_voltage / 2.0 + random.uniform(-0.01, 0.01), 2)
+                cell2 = round(battery_voltage - cell1, 2)
                 cursor.execute(
-                    "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?)",
-                    (battery_voltage, grid_voltage, load_current)
+                    "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current, cell1_voltage, cell2_voltage, cell3_voltage, cell4_voltage) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (battery_voltage, grid_voltage, load_current, cell1, cell2, None, None)
                 )
                 cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-30 days')")
                 conn.commit()
@@ -191,12 +205,16 @@ def polling_loop():
                     battery_voltage = data.get("battery_voltage", 0.0)
                     grid_voltage = data.get("grid_voltage", 0.0)
                     load_current = data.get("load_current", 0.0)
+                    cell1 = data.get("cell1_voltage")
+                    cell2 = data.get("cell2_voltage")
+                    cell3 = data.get("cell3_voltage")
+                    cell4 = data.get("cell4_voltage")
                     
                     conn = sqlite3.connect(DB_PATH)
                     cursor = conn.cursor()
                     cursor.execute(
-                        "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current) VALUES (?, ?, ?)",
-                        (battery_voltage, grid_voltage, load_current)
+                        "INSERT INTO ups_history (battery_voltage, grid_voltage, load_current, cell1_voltage, cell2_voltage, cell3_voltage, cell4_voltage) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (battery_voltage, grid_voltage, load_current, cell1, cell2, cell3, cell4)
                     )
                     cursor.execute("DELETE FROM ups_history WHERE timestamp < datetime('now', '-30 days')")
                     conn.commit()
@@ -353,7 +371,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         end_clean = end_clean.split('.')[0]
 
                     cursor.execute("""
-                        SELECT timestamp, battery_voltage, grid_voltage, load_current
+                        SELECT timestamp, battery_voltage, grid_voltage, load_current, cell1_voltage, cell2_voltage, cell3_voltage, cell4_voltage
                         FROM ups_history
                         WHERE timestamp BETWEEN ? AND ?
                         ORDER BY timestamp ASC
@@ -361,7 +379,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     filename = "ups_history_range.csv"
                 else:
                     cursor.execute("""
-                        SELECT timestamp, battery_voltage, grid_voltage, load_current
+                        SELECT timestamp, battery_voltage, grid_voltage, load_current, cell1_voltage, cell2_voltage, cell3_voltage, cell4_voltage
                         FROM ups_history
                         ORDER BY timestamp ASC
                     """)
@@ -370,9 +388,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 rows = cursor.fetchall()
                 conn.close()
 
-                csv_lines = ["timestamp,battery_voltage,grid_voltage,load_current"]
+                csv_lines = ["timestamp,battery_voltage,grid_voltage,load_current,cell1_voltage,cell2_voltage,cell3_voltage,cell4_voltage"]
                 for row in rows:
-                    csv_lines.append(f"{row[0]},{row[1]},{row[2]},{row[3]}")
+                    c1 = row[4] if row[4] is not None else ""
+                    c2 = row[5] if row[5] is not None else ""
+                    c3 = row[6] if row[6] is not None else ""
+                    c4 = row[7] if row[7] is not None else ""
+                    csv_lines.append(f"{row[0]},{row[1]},{row[2]},{row[3]},{c1},{c2},{c3},{c4}")
                 csv_data = "\n".join(csv_lines).encode('utf-8')
 
                 self.send_response(200)
@@ -445,7 +467,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         {group_expr} as t_time,
                         ROUND(AVG(battery_voltage), 2),
                         ROUND(MIN(grid_voltage), 1),
-                        ROUND(AVG(load_current), 2)
+                        ROUND(AVG(load_current), 2),
+                        ROUND(AVG(cell1_voltage), 2),
+                        ROUND(AVG(cell2_voltage), 2),
+                        ROUND(AVG(cell3_voltage), 2),
+                        ROUND(AVG(cell4_voltage), 2)
                     FROM ups_history 
                     WHERE timestamp BETWEEN ? AND ?
                     GROUP BY t_time
@@ -461,7 +487,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "time": row[0],
                         "battery_voltage": row[1],
                         "grid_voltage": row[2],
-                        "load_current": row[3]
+                        "load_current": row[3],
+                        "cell1_voltage": row[4],
+                        "cell2_voltage": row[5],
+                        "cell3_voltage": row[6],
+                        "cell4_voltage": row[7]
                     })
 
                 self.send_response(200)

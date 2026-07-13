@@ -829,7 +829,11 @@
                         time: formatDateLabel(new Date(item.time.replace(' ', 'T') + 'Z'), 'HH:mm:ss'),
                         battery_voltage: item.battery_voltage,
                         grid_voltage: item.grid_voltage,
-                        load_current: item.load_current
+                        load_current: item.load_current,
+                        cell1_voltage: item.cell1_voltage,
+                        cell2_voltage: item.cell2_voltage,
+                        cell3_voltage: item.cell3_voltage,
+                        cell4_voltage: item.cell4_voltage
                     }));
                 } else {
                     processedData = alignHistoryData(dbData, new Date(startUTC), new Date(endUTC));
@@ -992,14 +996,22 @@
                         time: label,
                         battery_voltage: matchedItem.battery_voltage,
                         grid_voltage: matchedItem.grid_voltage,
-                        load_current: matchedItem.load_current
+                        load_current: matchedItem.load_current,
+                        cell1_voltage: matchedItem.cell1_voltage,
+                        cell2_voltage: matchedItem.cell2_voltage,
+                        cell3_voltage: matchedItem.cell3_voltage,
+                        cell4_voltage: matchedItem.cell4_voltage
                     });
                 } else {
                     alignedData.push({
                         time: label,
                         battery_voltage: 0,
                         grid_voltage: 0,
-                        load_current: 0
+                        load_current: 0,
+                        cell1_voltage: null,
+                        cell2_voltage: null,
+                        cell3_voltage: null,
+                        cell4_voltage: null
                     });
                 }
             }
@@ -1034,9 +1046,82 @@
             const gridData = data.map(item => item.grid_voltage);
             const currentData = data.map(item => item.load_current);
 
+            const hasCell1 = batteryData.length > 0 && data.some(d => d.cell1_voltage !== null && d.cell1_voltage > 0);
+            const hasCell2 = batteryData.length > 0 && data.some(d => d.cell2_voltage !== null && d.cell2_voltage > 0);
+            const hasCell3 = batteryData.length > 0 && data.some(d => d.cell3_voltage !== null && d.cell3_voltage > 0);
+            const hasCell4 = batteryData.length > 0 && data.some(d => d.cell4_voltage !== null && d.cell4_voltage > 0);
+
+            const allBatteryVals = [...batteryData];
+            if (hasCell1) allBatteryVals.push(...data.map(item => item.cell1_voltage).filter(v => v !== null));
+            if (hasCell2) allBatteryVals.push(...data.map(item => item.cell2_voltage).filter(v => v !== null));
+            if (hasCell3) allBatteryVals.push(...data.map(item => item.cell3_voltage).filter(v => v !== null));
+            if (hasCell4) allBatteryVals.push(...data.map(item => item.cell4_voltage).filter(v => v !== null));
+
             const gridRange = getAutoRange(gridData, 1.0);
-            const batteryRange = getAutoRange(batteryData, 1.0);
+            const batteryRange = getAutoRange(allBatteryVals, 1.0);
             const currentRange = getAutoRange(currentData, 1.0);
+
+            const batteryDatasets = [
+                {
+                    label: 'String Voltage (V)',
+                    data: batteryData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.01)',
+                    tension: 0.1,
+                    fill: false,
+                    borderWidth: 1.5,
+                    pointRadius: 0.5
+                }
+            ];
+
+            if (hasCell1) {
+                batteryDatasets.push({
+                    label: 'Cell 1 Voltage (V)',
+                    data: data.map(item => item.cell1_voltage),
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6, 182, 212, 0.01)',
+                    tension: 0.1,
+                    fill: false,
+                    borderWidth: 1.2,
+                    pointRadius: 0.5
+                });
+            }
+            if (hasCell2) {
+                batteryDatasets.push({
+                    label: 'Cell 2 Voltage (V)',
+                    data: data.map(item => item.cell2_voltage),
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.01)',
+                    tension: 0.1,
+                    fill: false,
+                    borderWidth: 1.2,
+                    pointRadius: 0.5
+                });
+            }
+            if (hasCell3) {
+                batteryDatasets.push({
+                    label: 'Cell 3 Voltage (V)',
+                    data: data.map(item => item.cell3_voltage),
+                    borderColor: '#ec4899',
+                    backgroundColor: 'rgba(236, 72, 153, 0.01)',
+                    tension: 0.1,
+                    fill: false,
+                    borderWidth: 1.2,
+                    pointRadius: 0.5
+                });
+            }
+            if (hasCell4) {
+                batteryDatasets.push({
+                    label: 'Cell 4 Voltage (V)',
+                    data: data.map(item => item.cell4_voltage),
+                    borderColor: '#f43f5e',
+                    backgroundColor: 'rgba(244, 63, 94, 0.01)',
+                    tension: 0.1,
+                    fill: false,
+                    borderWidth: 1.2,
+                    pointRadius: 0.5
+                });
+            }
 
             // 1. Grid Chart
             if (!gridChart) {
@@ -1092,16 +1177,7 @@
                     type: 'line',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            label: 'String Voltage (V)',
-                            data: batteryData,
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.01)',
-                            tension: 0.1,
-                            fill: false,
-                            borderWidth: 1.5,
-                            pointRadius: 0.5
-                        }]
+                        datasets: batteryDatasets
                     },
                     options: {
                         responsive: true,
@@ -1121,12 +1197,18 @@
                                 ticks: { color: '#94a3b8', maxTicksLimit: 12 }
                             }
                         },
-                        plugins: { legend: { display: false } }
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { color: '#f8fafc', boxWidth: 10, font: { size: 10 } }
+                            }
+                        }
                     }
                 });
             } else {
                 batteryChart.data.labels = labels;
-                batteryChart.data.datasets[0].data = batteryData;
+                batteryChart.data.datasets = batteryDatasets;
                 batteryChart.options.scales.y.min = batteryRange.min;
                 batteryChart.options.scales.y.max = batteryRange.max;
                 batteryChart.update('none');
