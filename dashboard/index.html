@@ -649,32 +649,35 @@
 
         <!-- History Charts Section -->
         <!-- Time Range Selection Controls -->
-        <div class="card" style="margin-top: 1.5rem; padding: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; width: 100%;">
+        <div class="card" style="margin-top: 1.5rem; padding: 1.25rem;">
+            <!-- Line 1: Presets Buttons -->
+            <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; width: 100%; margin-bottom: 1rem;">
+                <button class="btn btn-preset" id="preset_10m" onclick="setPresetRange('10m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">10 Min</button>
+                <button class="btn btn-preset" id="preset_1h" onclick="setPresetRange('1h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">1 Hour</button>
+                <button class="btn btn-preset" id="preset_6h" onclick="setPresetRange('6h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">6 Hours</button>
+                <button class="btn btn-preset active" id="preset_24h" onclick="setPresetRange('24h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">24 Hours</button>
+                <button class="btn btn-preset" id="preset_1w" onclick="setPresetRange('1w')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">1 Week</button>
+                <button class="btn btn-preset" id="preset_1m" onclick="setPresetRange('1m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.85rem;">1 Month</button>
+            </div>
+            
+            <!-- Line 2: Date Selectors -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; width: 100%; margin-bottom: 1rem;">
                 <!-- Left: Start Time Widget -->
-                <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 220px;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; min-width: 200px;">
                     <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Start:</span>
-                    <input type="datetime-local" id="time_start" class="control-input" style="margin: 0; padding: 0.4rem; font-size: 0.85rem;" onchange="handleCustomTimeChange()">
+                    <input type="datetime-local" id="time_start" class="control-input" style="margin: 0; padding: 0.4rem; font-size: 0.85rem; width: 100%;" onchange="handleCustomTimeChange()">
                 </div>
-                
-                <!-- Center: Presets Buttons -->
-                <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap; flex-grow: 1;">
-                    <button class="btn btn-preset" id="preset_10m" onclick="setPresetRange('10m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">10 Min</button>
-                    <button class="btn btn-preset" id="preset_1h" onclick="setPresetRange('1h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">1 Hour</button>
-                    <button class="btn btn-preset" id="preset_6h" onclick="setPresetRange('6h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">6 Hours</button>
-                    <button class="btn btn-preset active" id="preset_24h" onclick="setPresetRange('24h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">24 Hours</button>
-                    <button class="btn btn-preset" id="preset_1w" onclick="setPresetRange('1w')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">1 Week</button>
-                    <button class="btn btn-preset" id="preset_1m" onclick="setPresetRange('1m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">1 Month</button>
-                    <div style="width: 1px; background: var(--border-color); margin: 0 0.25rem; align-self: stretch; min-height: 16px;"></div>
-                    <button class="btn btn-preset" onclick="downloadRange()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem; border-color: rgba(59, 130, 246, 0.4); color: #60a5fa; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download Range</button>
-                    <button class="btn btn-preset" onclick="downloadAll()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #34d399; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download All</button>
-                </div>
-                
                 <!-- Right: End Time Widget -->
-                <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 220px; justify-content: flex-end;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; min-width: 200px; justify-content: flex-end;">
                     <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">End:</span>
-                    <input type="datetime-local" id="time_end" class="control-input" style="margin: 0; padding: 0.4rem; font-size: 0.85rem;" onchange="handleCustomTimeChange()">
+                    <input type="datetime-local" id="time_end" class="control-input" style="margin: 0; padding: 0.4rem; font-size: 0.85rem; width: 100%;" onchange="handleCustomTimeChange()">
                 </div>
+            </div>
+
+            <!-- Line 3: Download Buttons -->
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; width: 100%;">
+                <button class="btn btn-preset" onclick="downloadRange()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 1rem; border-color: rgba(59, 130, 246, 0.4); color: #60a5fa; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download Range</button>
+                <button class="btn btn-preset" onclick="downloadAll()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 1rem; border-color: rgba(16, 185, 129, 0.4); color: #34d399; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download All</button>
             </div>
         </div>
 
