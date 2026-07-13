@@ -977,24 +977,37 @@
             return alignedData;
         }
 
+        function getAutoRange(dataArray, unitOffset = 1.0) {
+            if (!dataArray || dataArray.length === 0) {
+                return { min: 0, max: unitOffset * 2 };
+            }
+            const minVal = Math.min(...dataArray);
+            const maxVal = Math.max(...dataArray);
+            
+            let minRange = minVal - unitOffset;
+            let maxRange = maxVal + unitOffset;
+            
+            // Prevent negative ranges
+            if (minRange < 0) minRange = 0;
+            
+            // Ensure there is some range difference if data is flat
+            if (minRange === maxRange) {
+                minRange = Math.max(0, minVal - unitOffset);
+                maxRange = maxVal + unitOffset;
+            }
+            
+            return { min: minRange, max: maxRange };
+        }
+
         function updateChart(data) {
             const labels = data.map(item => item.time);
             const batteryData = data.map(item => item.battery_voltage);
             const gridData = data.map(item => item.grid_voltage);
             const currentData = data.map(item => item.load_current);
 
-            // Determine max voltage scaling dynamically based on system voltage
-            const peakVoltage = batteryData.length > 0 ? Math.max(...batteryData) : 26.8;
-            let maxVoltageScale = 30;
-            if (peakVoltage > 45) {
-                maxVoltageScale = 60;
-            } else if (peakVoltage > 32) {
-                maxVoltageScale = 45;
-            } else if (peakVoltage > 15) {
-                maxVoltageScale = 30;
-            } else {
-                maxVoltageScale = 18;
-            }
+            const gridRange = getAutoRange(gridData, 1.0);
+            const batteryRange = getAutoRange(batteryData, 1.0);
+            const currentRange = getAutoRange(currentData, 1.0);
 
             // 1. Grid Chart
             if (!gridChart) {
@@ -1021,8 +1034,8 @@
                         scales: {
                             y: {
                                 type: 'linear',
-                                min: 0,
-                                max: 260,
+                                min: gridRange.min,
+                                max: gridRange.max,
                                 title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                                 ticks: { color: '#94a3b8' }
@@ -1038,6 +1051,8 @@
             } else {
                 gridChart.data.labels = labels;
                 gridChart.data.datasets[0].data = gridData;
+                gridChart.options.scales.y.min = gridRange.min;
+                gridChart.options.scales.y.max = gridRange.max;
                 gridChart.update('none');
             }
 
@@ -1066,8 +1081,8 @@
                         scales: {
                             y: {
                                 type: 'linear',
-                                min: 0,
-                                max: maxVoltageScale,
+                                min: batteryRange.min,
+                                max: batteryRange.max,
                                 title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                                 ticks: { color: '#94a3b8' }
@@ -1083,7 +1098,8 @@
             } else {
                 batteryChart.data.labels = labels;
                 batteryChart.data.datasets[0].data = batteryData;
-                batteryChart.options.scales.y.max = maxVoltageScale;
+                batteryChart.options.scales.y.min = batteryRange.min;
+                batteryChart.options.scales.y.max = batteryRange.max;
                 batteryChart.update('none');
             }
 
@@ -1127,8 +1143,8 @@
                             'y-voltage': {
                                 type: 'linear',
                                 position: 'left',
-                                min: 0,
-                                max: maxVoltageScale,
+                                min: batteryRange.min,
+                                max: batteryRange.max,
                                 title: { display: true, text: 'Voltage (V)', color: '#94a3b8' },
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                                 ticks: { color: '#94a3b8' }
@@ -1136,7 +1152,8 @@
                             'y-current': {
                                 type: 'linear',
                                 position: 'right',
-                                min: 0,
+                                min: currentRange.min,
+                                max: currentRange.max,
                                 title: { display: true, text: 'Current (A)', color: '#94a3b8' },
                                 grid: { drawOnChartArea: false },
                                 ticks: { color: '#94a3b8' }
@@ -1159,7 +1176,10 @@
                 busLoadChart.data.labels = labels;
                 busLoadChart.data.datasets[0].data = batteryData;
                 busLoadChart.data.datasets[1].data = currentData;
-                busLoadChart.options.scales['y-voltage'].max = maxVoltageScale;
+                busLoadChart.options.scales['y-voltage'].min = batteryRange.min;
+                busLoadChart.options.scales['y-voltage'].max = batteryRange.max;
+                busLoadChart.options.scales['y-current'].min = currentRange.min;
+                busLoadChart.options.scales['y-current'].max = currentRange.max;
                 busLoadChart.update('none');
             }
         }
