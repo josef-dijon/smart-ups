@@ -351,7 +351,14 @@
             fill: #0f172a;
             stroke: rgba(255, 255, 255, 0.1);
             stroke-width: 2;
-            transition: stroke 0.5s, fill 0.5s;
+            transition: stroke 0.5s, fill 0.5s, stroke-width 0.2s;
+        }
+
+        [onclick] {
+            cursor: pointer;
+        }
+        [onclick]:hover .flow-node-bg {
+            stroke-width: 3.5px;
         }
 
         .flow-node-bg.active-grid {
@@ -512,16 +519,31 @@
                  <path id="link_4_5" d="M 315 211 L 325 211" stroke="rgba(255, 255, 255, 0.2)" stroke-width="3" stroke-dasharray="2 2" style="display: none;" />
                  <path id="link_5_6" d="M 475 211 L 485 211" stroke="rgba(255, 255, 255, 0.2)" stroke-width="3" stroke-dasharray="2 2" style="display: none;" />
 
-                 <!-- Nodes (casing backgrounds) -->
-                 <!-- Grid Node -->
-                 <circle id="grid_node" class="flow-node-bg" cx="100" cy="120" r="32" />
+                 <!-- Clickable Grid Input Group -->
+                 <g onclick="scrollToChart('card_grid_chart')">
+                     <!-- Grid Node -->
+                     <circle id="grid_node" class="flow-node-bg" cx="100" cy="120" r="32" />
+                     <!-- Grid Bolt Icon -->
+                     <g transform="translate(89, 106)">
+                         <path class="flow-node-icon" id="grid_icon" d="M11 1L2 11h8v8l9-10h-8z" />
+                     </g>
+                     <!-- Grid Labels -->
+                     <text x="100" y="172" class="flow-node-text">GRID INPUT</text>
+                     <text id="flow_grid_voltage" x="100" y="190" class="flow-node-val">--.- V</text>
+                 </g>
                  
-                 <!-- LAD Node -->
+                 <!-- LAD Converter Node -->
                  <rect id="lad_node" class="flow-node-bg" x="345" y="85" width="110" height="70" rx="8" ry="8" />
+                 <!-- LAD Convert Symbol -->
+                 <g transform="translate(392, 100)">
+                     <path class="flow-node-icon" id="lad_icon" d="M 0 5 Q 4 1, 8 5 T 16 5 M 0 11 L 16 11 M 0 14 L 16 14" />
+                 </g>
+                 <text id="flow_lad_model" x="400" y="145" class="flow-node-text" style="font-size: 10px; opacity: 0.8;">LAD-600BU</text>
+                 <text id="flow_lad_status" x="400" y="125" class="flow-node-text" style="font-size: 9px; fill: var(--text-muted);">OFFLINE</text>
 
                  <!-- Cell Groups -->
                  <!-- Cell 1 Group -->
-                 <g id="flow_cell1_group" style="display: none;">
+                 <g id="flow_cell1_group" style="display: none;" onclick="scrollToChart('card_battery_chart')">
                      <rect id="flow_cell1_node" class="flow-node-bg" x="-35" y="190" width="70" height="42" rx="4" ry="4" />
                      <g transform="translate(-10, 198)">
                          <rect class="flow-node-icon" x="0" y="2" width="20" height="10" rx="1.5" ry="1.5" style="stroke-width: 1.5;" />
@@ -532,7 +554,7 @@
                  </g>
 
                  <!-- Cell 2 Group -->
-                 <g id="flow_cell2_group" style="display: none;">
+                 <g id="flow_cell2_group" style="display: none;" onclick="scrollToChart('card_battery_chart')">
                      <rect id="flow_cell2_node" class="flow-node-bg" x="-35" y="190" width="70" height="42" rx="4" ry="4" />
                      <g transform="translate(-10, 198)">
                          <rect class="flow-node-icon" x="0" y="2" width="20" height="10" rx="1.5" ry="1.5" style="stroke-width: 1.5;" />
@@ -543,7 +565,7 @@
                  </g>
 
                  <!-- Cell 3 Group -->
-                 <g id="flow_cell3_group" style="display: none;">
+                 <g id="flow_cell3_group" style="display: none;" onclick="scrollToChart('card_battery_chart')">
                      <rect id="flow_cell3_node" class="flow-node-bg" x="-35" y="190" width="70" height="42" rx="4" ry="4" />
                      <g transform="translate(-10, 198)">
                          <rect class="flow-node-icon" x="0" y="2" width="20" height="10" rx="1.5" ry="1.5" style="stroke-width: 1.5;" />
@@ -554,7 +576,7 @@
                  </g>
 
                  <!-- Cell 4 Group -->
-                 <g id="flow_cell4_group" style="display: none;">
+                 <g id="flow_cell4_group" style="display: none;" onclick="scrollToChart('card_battery_chart')">
                      <rect id="flow_cell4_node" class="flow-node-bg" x="-35" y="190" width="70" height="42" rx="4" ry="4" />
                      <g transform="translate(-10, 198)">
                          <rect class="flow-node-icon" x="0" y="2" width="20" height="10" rx="1.5" ry="1.5" style="stroke-width: 1.5;" />
@@ -564,44 +586,57 @@
                      <text id="flow_cell4_voltage" x="0" y="259" class="flow-node-val" style="font-size: 11px;">--.-- V</text>
                  </g>
 
-                 <!-- Load Node -->
-                 <circle id="load_node" class="flow-node-bg" cx="700" cy="120" r="32" />
-
-                 <!-- Icons -->
-                 <!-- Grid Bolt Icon -->
-                 <g transform="translate(89, 106)">
-                     <path class="flow-node-icon" id="grid_icon" d="M11 1L2 11h8v8l9-10h-8z" />
+                 <!-- Clickable DC Bus / Load Output Group -->
+                 <g onclick="scrollToChart('card_bus_chart')">
+                     <!-- Load Node -->
+                     <circle id="load_node" class="flow-node-bg" cx="700" cy="120" r="32" />
+                     <!-- Load Fork Icon -->
+                     <g transform="translate(689, 109)">
+                         <path class="flow-node-icon" id="load_icon" d="M 5 3 L 5 11 M 11 3 L 11 11 M 2 7 L 14 7 M 8 11 L 8 18" />
+                     </g>
+                     <!-- DC Bus / Load Labels -->
+                     <text x="700" y="172" class="flow-node-text">DC BUS VOLTAGE</text>
+                     <text id="flow_battery_voltage" x="700" y="190" class="flow-node-val">--.-- V</text>
                  </g>
-
-                 <!-- LAD convert symbol -->
-                 <g transform="translate(392, 100)">
-                     <path class="flow-node-icon" id="lad_icon" d="M 0 5 Q 4 1, 8 5 T 16 5 M 0 11 L 16 11 M 0 14 L 16 14" />
-                 </g>
-
-                 <!-- Load Fork Icon -->
-                 <g transform="translate(689, 109)">
-                     <path class="flow-node-icon" id="load_icon" d="M 5 3 L 5 11 M 11 3 L 11 11 M 2 7 L 14 7 M 8 11 L 8 18" />
-                 </g>
-
-                 <!-- Labels and Values -->
-                 <text x="100" y="172" class="flow-node-text">GRID INPUT</text>
-                 <text id="flow_grid_voltage" x="100" y="190" class="flow-node-val">--.- V</text>
-
-                 <text id="flow_lad_model" x="400" y="145" class="flow-node-text" style="font-size: 10px; opacity: 0.8;">LAD-600BU</text>
-                 <text id="flow_lad_status" x="400" y="125" class="flow-node-text" style="font-size: 9px; fill: var(--text-muted);">OFFLINE</text>
 
                  <!-- Load current under the horizontal load pipe -->
-                 <text x="560" y="145" class="flow-node-text" style="font-size: 10px; font-weight: 700; fill: var(--text-muted);">LOAD: <tspan id="flow_load_current" style="fill: var(--text); font-weight: 800;">--.-- A</tspan></text>
-
-                 <!-- Battery voltage under the DC Bus / Load Node -->
-                 <text x="700" y="172" class="flow-node-text">DC BUS VOLTAGE</text>
-                 <text id="flow_battery_voltage" x="700" y="190" class="flow-node-val">--.-- V</text>
+                 <text x="560" y="145" class="flow-node-text" style="font-size: 10px; font-weight: 700; fill: var(--text-muted); cursor: pointer;" onclick="scrollToChart('card_bus_chart')">LOAD: <tspan id="flow_load_current" style="fill: var(--text); font-weight: 800;">--.-- A</tspan></text>
             </svg>
         </div>
 
-        <!-- Main Layout Grid -->
+        <!-- History Charts Section -->
+        <div class="card" id="card_grid_chart" style="margin-top: 1.5rem;">
+            <div class="card-title">
+                <span>Grid Input Voltage History (24 Hours)</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <div style="position: relative; height: 180px; width: 100%;">
+                <canvas id="gridChart"></canvas>
+            </div>
+        </div>
 
-        <div class="grid">
+        <div class="card" id="card_battery_chart" style="margin-top: 1.5rem;">
+            <div class="card-title">
+                <span>Battery String Voltage History (24 Hours)</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="12" rx="2" ry="2"/><line x1="6" y1="11" x2="10" y2="11"/><line x1="6" y1="15" x2="12" y2="15"/><line x1="22" y1="11" x2="22" y2="15"/></svg>
+            </div>
+            <div style="position: relative; height: 180px; width: 100%;">
+                <canvas id="batteryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card" id="card_bus_chart" style="margin-top: 1.5rem;">
+            <div class="card-title">
+                <span>DC Bus & Load Performance History (24 Hours)</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <div style="position: relative; height: 220px; width: 100%;">
+                <canvas id="busLoadChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Status and Controls Grid -->
+        <div class="grid" style="margin-top: 2rem;">
             <!-- Panel 1: Grid Input Power Panel -->
             <div class="card">
                 <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
@@ -620,9 +655,6 @@
                         <span class="metric-label">Grid AC Status</span>
                         <span class="badge" id="ac_status_badge">UNKNOWN</span>
                     </div>
-                </div>
-                <div style="margin-top: 2rem; height: 220px; position: relative; width: 100%;">
-                    <canvas id="gridChart"></canvas>
                 </div>
             </div>
 
@@ -656,9 +688,6 @@
                         <span class="metric-label">Cell Imbalance</span>
                         <span class="badge" id="balance_badge">UNKNOWN</span>
                     </div>
-                </div>
-                <div style="margin-top: 2rem; height: 220px; position: relative; width: 100%;">
-                    <canvas id="batteryChart"></canvas>
                 </div>
             </div>
 
@@ -719,9 +748,6 @@
                         </div>
                     </div>
                 </div>
-                <div style="margin-top: 1.5rem; height: 220px; position: relative; width: 100%;">
-                    <canvas id="busLoadChart"></canvas>
-                </div>
             </div>
         </div>
 
@@ -739,6 +765,21 @@
         let gridChart = null;
         let batteryChart = null;
         let busLoadChart = null;
+
+        function scrollToChart(chartCardId) {
+            const el = document.getElementById(chartCardId);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Temporarily apply glowing shadow to highlight the target chart card
+                el.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
+                el.style.boxShadow = '0 0 25px rgba(59, 130, 246, 0.45)';
+                el.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                setTimeout(() => {
+                    el.style.boxShadow = '';
+                    el.style.borderColor = '';
+                }, 1500);
+            }
+        }
 
         // Load configuration on boot
         window.addEventListener('load', () => {
@@ -815,7 +856,7 @@
                             },
                             x: {
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                                ticks: { color: '#94a3b8', maxTicksLimit: 5 }
+                                ticks: { color: '#94a3b8', maxTicksLimit: 12 }
                             }
                         },
                         plugins: { legend: { display: false } }
@@ -860,7 +901,7 @@
                             },
                             x: {
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                                ticks: { color: '#94a3b8', maxTicksLimit: 5 }
+                                ticks: { color: '#94a3b8', maxTicksLimit: 12 }
                             }
                         },
                         plugins: { legend: { display: false } }
@@ -928,7 +969,7 @@
                             },
                             x: {
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                                ticks: { color: '#94a3b8', maxTicksLimit: 5 }
+                                ticks: { color: '#94a3b8', maxTicksLimit: 12 }
                             }
                         },
                         plugins: {
