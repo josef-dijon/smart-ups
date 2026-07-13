@@ -376,14 +376,33 @@
             fill: rgba(16, 185, 129, 0.08);
         }
 
-        .flow-node-bg.discharging-battery {
+        .flow-node-bg.uvp-battery {
             stroke: var(--danger);
-            fill: rgba(239, 68, 68, 0.08);
+            fill: rgba(239, 68, 68, 0.15);
+            animation: nodePulseRed 2s infinite;
         }
 
         .flow-node-bg.active-load {
+            stroke: #3b82f6;
+            fill: rgba(59, 130, 246, 0.08);
+        }
+
+        .flow-node-bg.overload-load {
             stroke: var(--warning);
-            fill: rgba(245, 158, 11, 0.08);
+            fill: rgba(245, 158, 11, 0.15);
+            animation: nodePulseYellow 1.5s infinite;
+        }
+
+        @keyframes nodePulseRed {
+            0% { filter: drop-shadow(0 0 2px var(--danger)); }
+            50% { filter: drop-shadow(0 0 10px var(--danger)); }
+            100% { filter: drop-shadow(0 0 2px var(--danger)); }
+        }
+
+        @keyframes nodePulseYellow {
+            0% { filter: drop-shadow(0 0 2px var(--warning)); }
+            50% { filter: drop-shadow(0 0 10px var(--warning)); }
+            100% { filter: drop-shadow(0 0 2px var(--warning)); }
         }
 
         .flow-pipe {
@@ -635,77 +654,27 @@
             </div>
         </div>
 
-        <!-- Status and Controls Grid -->
-        <div class="grid" style="margin-top: 2rem;">
-            <!-- Column 1: Battery Diagnostics & Health -->
-            <div class="card">
-                <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-                    <span>Battery Diagnostics & Health</span>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="16" height="12" rx="2" ry="2"/><line x1="6" y1="11" x2="10" y2="11"/><line x1="6" y1="15" x2="12" y2="15"/><line x1="22" y1="11" x2="22" y2="15"/></svg>
-                </div>
-                <div class="metric-group">
-                    <div class="metric-row">
-                        <span class="metric-label">Battery Connection</span>
-                        <span class="badge" id="bat_conn_badge">UNKNOWN</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Charge State</span>
-                        <span class="badge" id="charge_badge">UNKNOWN</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Cell Imbalance</span>
-                        <span class="badge" id="balance_badge">UNKNOWN</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Backup Switch State</span>
-                        <span class="badge" id="relay_state_badge">UNKNOWN</span>
-                    </div>
-                </div>
-                
-                <!-- Cells discrete view (overlayed in diagram, but kept here as numeric reference list) -->
-                <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
-                    <div id="discrete_cells_container" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
-                    </div>
-                </div>
+        <!-- Settings Panel -->
+        <div class="card" style="margin-top: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem; justify-content: center;">
+                <span>System Settings</span>
             </div>
-
-            <!-- Column 2: System Settings & Controls -->
-            <div class="card">
-                <div class="card-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
-                    <span>System Controls & Protection</span>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">Buzzer Alarm Mute</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Toggle to mute or unmute the hardware buzzer alarm.</div>
+                    </div>
+                    <button class="btn" style="margin: 0; width: auto; font-size: 0.85rem; padding: 0.5rem 1rem;" id="btn_buzzer" onclick="toggleBuzzer()">Toggle Mute</button>
                 </div>
-                <div class="metric-group">
-                    <div class="metric-row">
-                        <span class="metric-label">Hardware UVP Limit</span>
-                        <div>
-                            <span class="metric-val" id="uvp_threshold">--.--</span>
-                            <span class="metric-unit">V</span>
-                        </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;">Under-Voltage Protection (UVP)</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Set threshold voltage for battery disconnect protection. Current limit: <span id="uvp_threshold" style="color: var(--warning); font-weight: 700;">--.--</span> V</div>
                     </div>
-                    <div class="metric-row">
-                        <span class="metric-label">UVP Alert Status</span>
-                        <span class="badge" id="uvp_alert_badge">UNKNOWN</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Overload Warning</span>
-                        <span class="badge" id="olp_badge">UNKNOWN</span>
-                    </div>
-                    
-                    <!-- Controls section -->
-                    <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 0.6rem;">
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn btn-danger" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; margin: 0;" id="btn_isolate" onclick="controlAction('isolate')">Isolate Relay</button>
-                            <button class="btn btn-success" style="flex: 1; font-size: 0.8rem; padding: 0.4rem; margin: 0;" id="btn_connect" onclick="controlAction('connect')">Restore Relay</button>
-                        </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <span class="metric-label" style="font-size: 0.8rem;">Buzzer Control</span>
-                            <button class="btn" style="margin: 0; width: auto; font-size: 0.8rem; padding: 0.4rem 0.8rem;" id="btn_buzzer" onclick="toggleBuzzer()">Toggle Mute</button>
-                        </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-                            <input type="number" step="0.1" min="18.0" max="28.0" class="control-input" style="margin: 0; font-size: 0.8rem; padding: 0.4rem; flex-grow: 1;" id="input_uvp" placeholder="UVP, e.g. 21.5">
-                            <button class="btn" style="margin: 0; width: auto; font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="submitUvp()">Write UVP</button>
-                        </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="number" step="0.1" min="9.0" max="55.0" class="control-input" style="margin: 0; font-size: 0.85rem; padding: 0.5rem; width: 100px;" id="input_uvp" placeholder="e.g. 21.5">
+                        <button class="btn" style="margin: 0; width: auto; font-size: 0.85rem; padding: 0.5rem 1rem;" onclick="submitUvp()">Write UVP</button>
                     </div>
                 </div>
             </div>
@@ -984,7 +953,7 @@
             }
         }
 
-        function updateUI(data) {
+               function updateUI(data) {
             // Voltages & Currents
             if (document.getElementById('grid_voltage')) {
                 document.getElementById('grid_voltage').innerText = data.grid_voltage.toFixed(1);
@@ -1046,43 +1015,51 @@
 
             // Cell Imbalance Status
             const balanceBadge = document.getElementById('balance_badge');
-            if (data.bat_no_balance) {
-                balanceBadge.innerText = "Imbalanced";
-                balanceBadge.className = "badge badge-danger";
-            } else {
-                balanceBadge.innerText = "Balanced / OK";
-                balanceBadge.className = "badge badge-success";
+            if (balanceBadge) {
+                if (data.bat_no_balance) {
+                    balanceBadge.innerText = "Imbalanced";
+                    balanceBadge.className = "badge badge-danger";
+                } else {
+                    balanceBadge.innerText = "Balanced / OK";
+                    balanceBadge.className = "badge badge-success";
+                }
             }
 
             // UVP Alert
             const uvpBadge = document.getElementById('uvp_alert_badge');
-            if (data.bat_uvp) {
-                uvpBadge.innerText = "UNDER-VOLTAGE";
-                uvpBadge.className = "badge badge-danger";
-            } else {
-                uvpBadge.innerText = "Voltage Normal";
-                uvpBadge.className = "badge badge-success";
+            if (uvpBadge) {
+                if (data.bat_uvp) {
+                    uvpBadge.innerText = "UNDER-VOLTAGE";
+                    uvpBadge.className = "badge badge-danger";
+                } else {
+                    uvpBadge.innerText = "Voltage Normal";
+                    uvpBadge.className = "badge badge-success";
+                }
             }
 
             // Overload status
             const olpBadge = document.getElementById('olp_badge');
-            if (data.discharge_olp) {
-                olpBadge.innerText = "OVERLOAD ALERT";
-                olpBadge.className = "badge badge-danger";
-            } else {
-                olpBadge.innerText = "Load OK";
-                olpBadge.className = "badge badge-success";
+            if (olpBadge) {
+                if (data.discharge_olp) {
+                    olpBadge.innerText = "OVERLOAD ALERT";
+                    olpBadge.className = "badge badge-danger";
+                } else {
+                    olpBadge.innerText = "Load OK";
+                    olpBadge.className = "badge badge-success";
+                }
             }
 
             // Standby Switch State
             const relayBadge = document.getElementById('relay_state_badge');
-            isIsolated = data.bat_sw_off;
-            if (isIsolated) {
-                relayBadge.innerText = "ISOLATED";
-                relayBadge.className = "badge badge-danger";
-            } else {
-                relayBadge.innerText = "BACKUP ARMED";
-                relayBadge.className = "badge badge-success";
+            if (relayBadge) {
+                isIsolated = data.bat_sw_off;
+                if (isIsolated) {
+                    relayBadge.innerText = "ISOLATED";
+                    relayBadge.className = "badge badge-danger";
+                } else {
+                    relayBadge.innerText = "BACKUP ARMED";
+                    relayBadge.className = "badge badge-success";
+                }
             }
 
             // --- Update SVG Energy Flow Diagram ---
@@ -1110,32 +1087,7 @@
             document.getElementById('flow_lad_model').textContent = `LAD-600${modelSuffix}`;
             document.getElementById('flow_load_current').textContent = data.load_current.toFixed(2) + ' A';
 
-            // 2. Dynamically populate the Panel 2 list card container
-            const cellContainer = document.getElementById('discrete_cells_container');
-            if (cellContainer) {
-                let html = '';
-                const getPct = (val) => Math.max(0, Math.min(100, ((val - 10.0) / 3.8) * 100));
-                for (let i = 1; i <= cellCount; i++) {
-                    const cellVolt = data[`cell${i}_voltage`] || 0;
-                    html += `
-                        <div style="margin-top: 0.25rem; padding-top: 0.25rem; ${i === 1 ? '' : 'border-top: 1px solid rgba(255,255,255,0.05);'}">
-                            <div class="metric-row" style="border: none; padding-bottom: 0;">
-                                <span class="metric-label" style="font-size: 0.85rem;">Battery ${i} Voltage (Cell ${i})</span>
-                                <div>
-                                    <span class="metric-val" style="font-size: 1rem;">${cellVolt.toFixed(2)}</span>
-                                    <span class="metric-unit" style="font-size: 0.8rem;">V</span>
-                                </div>
-                            </div>
-                            <div class="cell-bar-container" style="height: 6px; margin-top: 4px;">
-                                <div class="cell-bar" style="width: ${getPct(cellVolt)}%;"></div>
-                            </div>
-                        </div>
-                    `;
-                }
-                cellContainer.innerHTML = html;
-            }
-
-            // 3. Render cell coordinates and visibility in the SVG
+            // 2. Render cell coordinates and visibility in the SVG
             const centersMap = {
                 1: [400],
                 2: [360, 440],
@@ -1159,17 +1111,24 @@
                             flowCellVoltText.textContent = val.toFixed(2) + ' V';
                         }
                         
-                        // Set cell node highlight style
+                        // Set cell node highlight style and opacity based on connection/UVP/charge status
                         const nodeEl = document.getElementById(`flow_cell${i}_node`);
                         if (nodeEl) {
                             if (data.bat_nc) {
                                 nodeEl.setAttribute('class', 'flow-node-bg');
-                            } else if (data.ac_ok && data.bat_chging) {
-                                nodeEl.setAttribute('class', 'flow-node-bg active-battery');
-                            } else if (!data.ac_ok && !data.bat_sw_off && data.load_current > 0.05) {
-                                nodeEl.setAttribute('class', 'flow-node-bg discharging-battery');
+                                group.style.opacity = '0.25';
+                                group.style.filter = 'grayscale(1)';
                             } else {
-                                nodeEl.setAttribute('class', data.bat_sw_off ? 'flow-node-bg' : 'flow-node-bg active-battery');
+                                group.style.opacity = '1';
+                                group.style.filter = 'none';
+                                
+                                if (data.bat_uvp) {
+                                    nodeEl.setAttribute('class', 'flow-node-bg uvp-battery');
+                                } else if (data.bat_chgfull || data.bat_chging || (!data.bat_sw_off && !data.bat_nc)) {
+                                    nodeEl.setAttribute('class', 'flow-node-bg active-battery');
+                                } else {
+                                    nodeEl.setAttribute('class', 'flow-node-bg');
+                                }
                             }
                         }
                     } else {
@@ -1252,16 +1211,22 @@
                 flowLadStatus.style.fill = 'var(--text-muted)';
             }
 
-            // 8. Update Load Flow
+            // 8. Update Load Flow & Overload Warning (Overload makes load node yellow/pulsing)
             const loadNode = document.getElementById('load_node');
             const loadFlowPipe = document.getElementById('load_flow_pipe');
-            if (data.load_current > 0.05) {
+            if (data.discharge_olp) {
+                loadNode.setAttribute('class', 'flow-node-bg overload-load');
+            } else if (data.load_current > 0.05) {
                 loadNode.setAttribute('class', 'flow-node-bg active-load');
+            } else {
+                loadNode.setAttribute('class', 'flow-node-bg');
+            }
+
+            if (data.load_current > 0.05) {
                 loadFlowPipe.setAttribute('class', 'flow-animation-pipe load-flow');
                 const loadDuration = Math.max(0.4, Math.min(3.0, 3.0 / data.load_current));
                 loadFlowPipe.style.animationDuration = loadDuration + 's';
             } else {
-                loadNode.setAttribute('class', 'flow-node-bg');
                 loadFlowPipe.setAttribute('class', 'flow-animation-pipe');
                 loadFlowPipe.style.animationDuration = '';
             }
