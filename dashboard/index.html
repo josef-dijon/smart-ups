@@ -820,8 +820,30 @@
                 if (!res.ok) throw new Error("History API responded with error");
                 const dbData = await res.json();
                 
-                const alignedData = alignHistoryData(dbData, new Date(startISO), new Date(endISO));
-                updateChart(alignedData);
+                let processedData;
+                if (activePresetRange === '10m' && !customTimeActive) {
+                    processedData = dbData.map(item => ({
+                        time: formatDateLabel(new Date(item.time.replace(' ', 'T')), 'HH:mm:ss'),
+                        battery_voltage: item.battery_voltage,
+                        grid_voltage: item.grid_voltage,
+                        load_current: item.load_current
+                    }));
+                } else {
+                    processedData = alignHistoryData(dbData, new Date(startISO), new Date(endISO));
+                }
+
+                const maxPoints = 500;
+                if (processedData.length > maxPoints) {
+                    const step = processedData.length / maxPoints;
+                    const sampled = [];
+                    for (let i = 0; i < maxPoints; i++) {
+                        const idx = Math.floor(i * step);
+                        sampled.push(processedData[idx]);
+                    }
+                    processedData = sampled;
+                }
+                
+                updateChart(processedData);
             } catch (err) {
                 console.error("Error fetching history logs:", err);
             }
@@ -888,20 +910,20 @@
             if (durationMs <= 11 * 60 * 1000) { // <= 11 mins
                 stepMs = 10000; // 10 seconds
                 timeFormat = 'HH:mm:ss';
-            } else if (durationMs <= 65 * 60 * 1000) { // <= 65 mins
+            } else if (durationMs <= 65 * 60 * 1000) { // <= 65 mins (1 hour)
+                stepMs = 10000; // 10 seconds
+                timeFormat = 'HH:mm:ss';
+            } else if (durationMs <= 6.5 * 60 * 60 * 1000) { // <= 6.5 hours (6 hours)
                 stepMs = 60000; // 1 minute
                 timeFormat = 'HH:mm';
-            } else if (durationMs <= 6.5 * 60 * 60 * 1000) { // <= 6.5 hours
-                stepMs = 5 * 60 * 1000; // 5 minutes
+            } else if (durationMs <= 25 * 60 * 60 * 1000) { // <= 25 hours (24 hours)
+                stepMs = 180000; // 3 minutes
                 timeFormat = 'HH:mm';
-            } else if (durationMs <= 25 * 60 * 60 * 1000) { // <= 25 hours
-                stepMs = 10 * 60 * 1000; // 10 minutes
-                timeFormat = 'HH:mm';
-            } else if (durationMs <= 7.5 * 24 * 60 * 60 * 1000) { // <= 7.5 days
-                stepMs = 60 * 60 * 1000; // 1 hour
+            } else if (durationMs <= 7.5 * 24 * 60 * 60 * 1000) { // <= 7.5 days (1 week)
+                stepMs = 1200000; // 20 minutes
                 timeFormat = 'MM-DD HH:mm';
             } else { // 1 month or more
-                stepMs = 4 * 60 * 60 * 1000; // 4 hours
+                stepMs = 5400000; // 90 minutes
                 timeFormat = 'MM-DD HH:mm';
             }
 
@@ -984,7 +1006,7 @@
                             data: gridData,
                             borderColor: '#3b82f6',
                             backgroundColor: 'rgba(59, 130, 246, 0.01)',
-                            tension: 0.2,
+                            tension: 0,
                             fill: false,
                             borderWidth: 1.5,
                             pointRadius: 0.5
@@ -1029,7 +1051,7 @@
                             data: batteryData,
                             borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.01)',
-                            tension: 0.2,
+                            tension: 0,
                             fill: false,
                             borderWidth: 1.5,
                             pointRadius: 0.5
@@ -1077,7 +1099,7 @@
                                 borderColor: '#10b981',
                                 backgroundColor: 'rgba(16, 185, 129, 0.01)',
                                 yAxisID: 'y-voltage',
-                                tension: 0.2,
+                                tension: 0,
                                 fill: false,
                                 borderWidth: 1.5,
                                 pointRadius: 0.5
@@ -1088,7 +1110,7 @@
                                 borderColor: '#f59e0b',
                                 backgroundColor: 'rgba(245, 158, 11, 0.01)',
                                 yAxisID: 'y-current',
-                                tension: 0.2,
+                                tension: 0,
                                 fill: false,
                                 borderWidth: 1.5,
                                 pointRadius: 0.5
