@@ -810,7 +810,7 @@
             } else {
                 gridChart.data.labels = labels;
                 gridChart.data.datasets[0].data = gridData;
-                gridChart.update();
+                gridChart.update('none');
             }
 
             // 2. Battery Chart
@@ -856,7 +856,7 @@
                 batteryChart.data.labels = labels;
                 batteryChart.data.datasets[0].data = batteryData;
                 batteryChart.options.scales.y.max = maxVoltageScale;
-                batteryChart.update();
+                batteryChart.update('none');
             }
 
             // 3. Bus & Load Chart
@@ -933,7 +933,7 @@
                 busLoadChart.data.datasets[0].data = batteryData;
                 busLoadChart.data.datasets[1].data = currentData;
                 busLoadChart.options.scales['y-voltage'].max = maxVoltageScale;
-                busLoadChart.update();
+                busLoadChart.update('none');
             }
         }
 
