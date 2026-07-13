@@ -662,6 +662,9 @@
                     <button class="btn btn-preset active" id="preset_24h" onclick="setPresetRange('24h')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">24 Hours</button>
                     <button class="btn btn-preset" id="preset_1w" onclick="setPresetRange('1w')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">1 Week</button>
                     <button class="btn btn-preset" id="preset_1m" onclick="setPresetRange('1m')" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem;">1 Month</button>
+                    <div style="width: 1px; background: var(--border-color); margin: 0 0.25rem; align-self: stretch; min-height: 16px;"></div>
+                    <button class="btn btn-preset" onclick="downloadRange()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem; border-color: rgba(59, 130, 246, 0.4); color: #60a5fa; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download Range</button>
+                    <button class="btn btn-preset" onclick="downloadAll()" style="margin: 0; font-size: 0.8rem; padding: 0.4rem 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #34d399; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Download All</button>
                 </div>
                 
                 <!-- Right: End Time Widget -->
@@ -887,6 +890,32 @@
                 btn.classList.remove('active');
             });
             fetchHistory();
+        }
+
+        function downloadRange() {
+            let startUTC = '';
+            let endUTC = '';
+            
+            if (customTimeActive) {
+                const localStart = new Date(document.getElementById('time_start').value);
+                const localEnd = new Date(document.getElementById('time_end').value);
+                if (isNaN(localStart.getTime()) || isNaN(localEnd.getTime())) {
+                    alert("Please select a valid start and end range first.");
+                    return;
+                }
+                startUTC = localStart.toISOString();
+                endUTC = localEnd.toISOString();
+            } else {
+                const dates = getRangeDates(activePresetRange);
+                startUTC = dates.start.toISOString();
+                endUTC = dates.end.toISOString();
+            }
+            
+            window.location.href = `/api/download?start=${encodeURIComponent(startUTC)}&end=${encodeURIComponent(endUTC)}`;
+        }
+
+        function downloadAll() {
+            window.location.href = '/api/download';
         }
 
         function formatDateLabel(date, format) {

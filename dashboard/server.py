@@ -334,6 +334,60 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": f"Failed to control device: {e}"}).encode('utf-8'))
+
+        elif path == "/api/download":
+            try:
+                params = urllib.parse.parse_qs(query)
+                start_param = params.get("start", [None])[0]
+                end_param = params.get("end", [None])[0]
+
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+
+                if start_param and end_param:
+                    start_clean = start_param.replace('T', ' ').replace('Z', '')
+                    if '.' in start_clean:
+                        start_clean = start_clean.split('.')[0]
+                    end_clean = end_param.replace('T', ' ').replace('Z', '')
+                    if '.' in end_clean:
+                        end_clean = end_clean.split('.')[0]
+
+                    cursor.execute("""
+                        SELECT timestamp, battery_voltage, grid_voltage, load_current
+                        FROM ups_history
+                        WHERE timestamp BETWEEN ? AND ?
+                        ORDER BY timestamp ASC
+                    """, (start_clean, end_clean))
+                    filename = "ups_history_range.csv"
+                else:
+                    cursor.execute("""
+                        SELECT timestamp, battery_voltage, grid_voltage, load_current
+                        FROM ups_history
+                        ORDER BY timestamp ASC
+                    """)
+                    filename = "ups_history_all.csv"
+
+                rows = cursor.fetchall()
+                conn.close()
+
+                csv_lines = ["timestamp,battery_voltage,grid_voltage,load_current"]
+                for row in rows:
+                    csv_lines.append(f"{row[0]},{row[1]},{row[2]},{row[3]}")
+                csv_data = "\n".join(csv_lines).encode('utf-8')
+
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/csv')
+                self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+                self.send_header('Content-Length', str(len(csv_data)))
+                self.end_headers()
+                self.wfile.write(csv_data)
+                return
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": f"Failed to generate CSV: {e}"}).encode('utf-8'))
+                return
                 
         elif path == "/api/history":
             try:
