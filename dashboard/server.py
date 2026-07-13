@@ -391,7 +391,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     SELECT 
                         {group_expr} as t_time,
                         ROUND(AVG(battery_voltage), 2),
-                        ROUND(AVG(grid_voltage), 1),
+                        ROUND(MIN(grid_voltage), 1),
                         ROUND(AVG(load_current), 2)
                     FROM ups_history 
                     WHERE datetime(timestamp, 'localtime') BETWEEN ? AND ?
